@@ -5,21 +5,23 @@
 #include <arpa/inet.h>
 #include <sys/socket.h>
 #include "form.h"
+
+#define CLIENT_MAX 30
+
+void server(int socket);
 void error_handling(char *message);
 
 int main(int argc, char *argv[])
 {
 	int serv_sock;
 	int clnt_sock;
-    int i = 0;
+    int connectCnt = 0;
 
 	struct sockaddr_in serv_addr;
 	struct sockaddr_in clnt_addr;
 	socklen_t clnt_addr_size;
 
     unsigned char msg[BUFSIZE] = {0, };
-	char writeBuf[256] = "received well!";
-	char readBuf[256];
 
 	if(argc != 2)
 	{
@@ -50,17 +52,43 @@ int main(int argc, char *argv[])
 		if(clnt_sock==-1)
 			continue;
 		else
-			printf("Connected client %d \n", ++i);
-		while(1)
+			printf("Connected client %d \n", ++connectCnt);
+
+		pid_t pid = fork();
+		if(pid == 0)
 		{
-			read(clnt_sock, &readBuf, sizeof(readBuf));
-			printf("%s\n", readBuf);
-			write(clnt_sock, &writeBuf, sizeof(writeBuf));
+			server(clnt_sock);
+			close(clnt_sock);
 		}
+			
+		else if(pid < 0)
+		{
+			fprintf(stderr, "Fork() Failed\n");
+			close(clnt_sock);
+		}
+		else
+			close(clnt_sock);
+		
 	}
 
 	close(serv_sock);
 	return 0;
+}
+
+void server(int socket)
+{
+	char writeBuf[256] = "received well!";
+	char readBuf[256];
+
+	while(1)
+	{
+		read(socket, &readBuf, sizeof(readBuf));
+		printf("%s\n", readBuf);
+		write(socket, &writeBuf, sizeof(writeBuf));
+
+		if((strcmp(readBuf, "quit"))==0)
+			break;
+	}
 }
 
 void error_handling(char *message)
