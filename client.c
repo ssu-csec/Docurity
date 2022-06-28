@@ -15,23 +15,8 @@ int main(int argc, char *argv[])
 
 	int sock;
 	struct sockaddr_in serv_addr;
-
-    List *cipherText = (List *)calloc(1, sizeof(List));
-    InitList(cipherText);
-
-    AES_KEY *enc_key;
-    enc_key = (AES_KEY*)malloc(sizeof(AES_KEY));
-    unsigned char cts128_test_key[16] = "Jeonsan-Gwan 539";
-    AES_set_encrypt_key(cts128_test_key, 128, enc_key);
-
-    AES_KEY *dec_key;
-    dec_key = (AES_KEY*)malloc(sizeof(AES_KEY));
-    AES_set_decrypt_key(cts128_test_key, 128, dec_key);
-
-    unsigned char global_meta[256] = {0, };
-	unsigned char message[2048] = {0, };
-    int index = 0;
-	int str_len;
+	char writeBuf[256];
+	char readBuf[256];
 
 	if(argc != 3)
 	{
@@ -50,16 +35,14 @@ int main(int argc, char *argv[])
 
 	if(connect(sock, (struct sockaddr*)&serv_addr, sizeof(serv_addr)) == -1)
 		error_handling("connect() error!");
-	
-    while(1)
-    {
-        if (read(sock, global_meta, 256) == -1)
-            error_handling("read() error!");
-        printf("insert data: ");
-        scanf("%s", &message);
-        printf("insert index: ");
-        scanf("%d", index);
-    }
+
+	while(1)
+	{
+		scanf("%s", &writeBuf);
+		write(sock, &writeBuf, sizeof(writeBuf));
+		read(sock, &readBuf, sizeof(readBuf));
+		printf("(r) %s\n", readBuf);
+	}
 
 	close(sock);
 	return 0;
