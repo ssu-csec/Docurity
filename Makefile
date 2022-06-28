@@ -3,12 +3,7 @@ CFLAGS = -g
 LDPATH = -L/usr/local/lib
 LDFLAGS = -lssl -lcrypto
 
-test.out:	test.o	form.o
-	$(CC) -o	test.out	test.o	form.o	$(LDPATH) $(LDFLAGS) 
-
-test.o:	form.h	test.c
-	$(CC) -c -o	test.o	test.c	$(CFLAGS)
- 
+build: server client
 
 server:	server.o	form.o
 	$(CC) -o	server	server.o	form.o	$(LDPATH) $(LDFLAGS) 
