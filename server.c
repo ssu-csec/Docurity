@@ -4,6 +4,7 @@
 #include <unistd.h>
 #include <arpa/inet.h>
 #include <sys/socket.h>
+#include <pthread.h>
 #include "form.h"
 
 #define CLIENT_MAX 30
@@ -16,6 +17,8 @@ int main(int argc, char *argv[])
 	int serv_sock;
 	int clnt_sock;
     int connectCnt = 0;
+
+	pthread_t thread_id;
 
 	struct sockaddr_in serv_addr;
 	struct sockaddr_in clnt_addr;
@@ -54,21 +57,7 @@ int main(int argc, char *argv[])
 		else
 			printf("Connected client %d \n", ++connectCnt);
 
-		pid_t pid = fork();
-		if(pid == 0)
-		{
-			server(clnt_sock);
-			close(clnt_sock);
-		}
-			
-		else if(pid < 0)
-		{
-			fprintf(stderr, "Fork() Failed\n");
-			close(clnt_sock);
-		}
-		else
-			close(clnt_sock);
-		
+		pthread_create(&thread_id, NULL, server, clnt_sock);
 	}
 
 	close(serv_sock);
@@ -89,6 +78,8 @@ void server(int socket)
 		if((strcmp(readBuf, "quit"))==0)
 			break;
 	}
+
+	close(socket);
 }
 
 void error_handling(char *message)

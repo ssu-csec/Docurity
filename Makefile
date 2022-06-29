@@ -1,7 +1,7 @@
 CC = gcc
 CFLAGS = -g
 LDPATH = -L/usr/local/lib
-LDFLAGS = -lssl -lcrypto
+LDFLAGS = -lssl -lcrypto -lpthread
 
 build: server client
 
