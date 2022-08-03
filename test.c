@@ -33,51 +33,33 @@ int main()
     dec_key = (AES_KEY*)malloc(sizeof(AES_KEY));
     AES_set_decrypt_key(cts128_test_key, 128, dec_key);
 
-    FILE *fp;
-    fp = fopen("test.txt", "r");
-
-    fseek(fp, 0, SEEK_END);
-    plainTextLen = ftell(fp);
-
-    int outlen;
-
-    fseek(fp, 0, SEEK_SET);
-
-    plainText = (unsigned char*)calloc(plainTextLen, sizeof(unsigned char));
-
-    fread(plainText, plainTextLen, 1, fp);
-    fclose(fp);
-
-    cipherTextLen = encrypt(plainText, cipherText, plainTextLen, enc_key, front_ivec, back_ivec);
-
-    printf("Decrypted data: ");
-    for(int i = 0; i < 128; i++)
+    unsigned char input[BUFSIZE];
+    unsigned char inst[10] = {0, };
+    int index = 0;
+    printf("Insert or Delete? ");
+    scanf("%s", &inst);
+    printf("input index: ");
+    scanf("%d", &index);
+    if(strncmp(inst, "Insert", 6) == 0)
     {
-        printf("%x", global_meta[i]);
+        printf("input data: ");
+        scanf("%s", &input);
+        insertion(input, cipherText, index, strlen(input), enc_key, dec_key, global_meta);
     }
-    printf("\n\n");
-    
-
-    fp = fopen("cipher.txt", "r+");
-    unsigned char *out;
-
-    out = calloc(plainTextLen, sizeof(unsigned char));    
-
-    char buf[4096] = {0,};
-    
-    
-    fread(buf, 1, cipherTextLen, fp);
-
-    // decrypt(buf, out, cipherTextLen, dec_key);
-
-    printf("Decrypted data: ");
-    for(int i = 0; i < plainTextLen; i++)
+    else if(strncmp(inst, "Delete", 6) == 0)
     {
-        printf("%c", out[i]);
+        int length = 0;
+        printf("input delete length");
+        scanf("%d", &length);
+        deletion(cipherText, index, length, enc_key, dec_key, global_meta);
     }
-    printf("\n\n");
-    
-    fclose(fp);
+
+
+
+    unsigned char result[BUFSIZE * 10];
+    decrypt(cipherText, result, dec_key);
+
+    printf("decrypted data : %s", result);
 
     return 0;
 }
