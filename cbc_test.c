@@ -49,6 +49,7 @@ void cbc_insert(unsigned char *in, List *out, unsigned char *ivec, int index, in
     if(out->count == 0)
     {
         unsigned char *data = calloc(ins_len, sizeof(unsigned char));
+        memcpy(data, in, ins_len);
         cbc_encrypt(data, list, (ins_len/AES_BLOCK_SIZE + 1) * AES_BLOCK_SIZE, ivec, enc_key);
 
     }

@@ -33,6 +33,12 @@ int main()
     dec_key = (AES_KEY*)malloc(sizeof(AES_KEY));
     AES_set_decrypt_key(cts128_test_key, 128, dec_key);
 
+    unsigned char ivec[16] = {0, };
+    for(int i = 0; i < 16; i++)
+    {
+        ivec[i] = (unsigned char)(rand()%256);
+    }
+
     unsigned char input[BUFSIZE];
     unsigned char inst[10] = {0, };
     int index = 0;

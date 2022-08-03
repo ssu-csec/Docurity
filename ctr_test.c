@@ -51,6 +51,7 @@ void ctr_insert(unsigned char *in, List *out, unsigned char *ivec, int index, un
     if(out->count == 0)
     {
         unsigned char *data = calloc(ins_len, sizeof(unsigned char));
+        memcpy(data, in, ins_len);
         ctr_encrypt(data, list, (ins_len/AES_BLOCK_SIZE + 1) * AES_BLOCK_SIZE, ivec, last_num, enc_key);
     }
     else
