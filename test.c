@@ -17,7 +17,9 @@ int main()
     unsigned char *plainText;
     
 
-    unsigned char cipherText[2048] = {0, };
+    List *cipherText = (List *)calloc(1, sizeof(List));
+    InitList(cipherText);
+    unsigned char global_meta[128] = {0, };
 
     unsigned char front_ivec = rand() % 256;
     unsigned char back_ivec = front_ivec;
@@ -46,18 +48,14 @@ int main()
     fread(plainText, plainTextLen, 1, fp);
     fclose(fp);
 
-    cipherTextLen = encrypt(plainText, cipherText, plainTextLen, enc_key, front_ivec, back_ivec, (block128_f) AES_encrypt);
+    cipherTextLen = encrypt(plainText, cipherText, plainTextLen, enc_key, front_ivec, back_ivec);
 
-    fp = fopen("cipher.txt", "w+");
-
-
-    for(int i = 0; i < cipherTextLen; i++)
+    printf("Decrypted data: ");
+    for(int i = 0; i < 128; i++)
     {
-        fprintf(fp, "%c", cipherText[i]);
+        printf("%x", global_meta[i]);
     }
-
- 
-    fclose(fp);
+    printf("\n\n");
     
 
     fp = fopen("cipher.txt", "r+");
@@ -69,8 +67,8 @@ int main()
     
     
     fread(buf, 1, cipherTextLen, fp);
-    printf("buff : %s\n", buf);
-    decrypt(buf, out, cipherTextLen, dec_key, (block128_f) AES_decrypt);
+
+    // decrypt(buf, out, cipherTextLen, dec_key);
 
     printf("Decrypted data: ");
     for(int i = 0; i < plainTextLen; i++)

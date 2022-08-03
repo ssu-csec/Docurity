@@ -1,5 +1,6 @@
 #include <string.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include <time.h>
 #include <math.h>
 #include <openssl/crypto.h>
@@ -79,6 +80,24 @@ void global_decrypt(const unsigned char *in, unsigned char *out, size_t len,
     }
 }
 
+void insert_global(unsigned char *in, unsigned char *insert, int index)
+{
+    unsigned char *temp = calloc(strlen(in) - index, sizeof(unsigned char));
+    memcpy(temp, in+index, strlen(in) - index);
+    memcpy(in+index, insert, strlen(insert));
+    memcpy(in+index+strlen(insert), temp, strlen(in) - index);
+
+    free(temp);
+}
+
+void delete_global(unsigned char *in, int index, int length)
+{
+    unsigned char *temp = calloc(strlen(in) - index - length, sizeof(unsigned char));
+    memcpy(temp, in + index + length, strlen(in) - index - length);
+    memcpy(in+index, temp, strlen(in) - index - length);
+    free(temp);
+}
+
 void encrypt(const unsigned char *in, List *out, size_t len, const void *enc_key, 
                            unsigned char front_ivec, unsigned char back_ivec)
 {
@@ -91,7 +110,7 @@ void encrypt(const unsigned char *in, List *out, size_t len, const void *enc_key
     meta = &tmp[1];
 
     if(len == 0)
-        return 0;
+        return;
     
     while (len > AES_BLOCK_SIZE - (2*LINK_LENGTH + METADATA_LENGTH)) 
     {
@@ -154,7 +173,7 @@ void decrypt(List *in, unsigned char *out, const void *dec_key)
 
     while(c) {
         new_node = new_node->next;
-        memcpy(tmp, new_node->data, 16);
+        memcpy(tmp, &(new_node->data), 16);
         AES_decrypt(tmp, tmp, dec_key);
 
         link_front = tmp[0];
@@ -202,8 +221,6 @@ void deletion(List *out, int index, int del_len, const void *enc_key, const void
     unsigned char *plain_gmeta;
     plain_gmeta = calloc(gmeta_len, sizeof(unsigned char));
 
-    unsigned char *modify_gmeta;
-
     global_decrypt(global_meta, plain_gmeta, enc_gmeta_len, dec_key);
 
     int check1 = 0;
@@ -236,7 +253,7 @@ void deletion(List *out, int index, int del_len, const void *enc_key, const void
         PACKET *packet = calloc(1, sizeof(PACKET));
         NODE_SEND *node_send = calloc(1, sizeof(NODE_SEND));
         unsigned char tmp[16] = {0, };
-        memcpy(tmp, front_node->data, 16);
+        memcpy(tmp, &(front_node->data), 16);
         AES_decrypt(tmp, tmp, dec_key);
         packet->msgType = DATA;
         node_send->inst = DELETE;
@@ -247,7 +264,7 @@ void deletion(List *out, int index, int del_len, const void *enc_key, const void
         memset(msg, 0, BUFSIZE);
         tmp[15] = front_link;
         AES_encrypt(tmp, tmp, enc_key);
-        memcpy(front_node->data, tmp, 16);
+        memcpy(&(front_node->data), tmp, 16);
         packet->msgType = DATA;
         node_send->inst = INSERT;
         node_send->index = front_block_num - 2;
@@ -257,7 +274,7 @@ void deletion(List *out, int index, int del_len, const void *enc_key, const void
         write(socket, msg, BUFSIZE);
         memset(msg, 0, BUFSIZE);
 
-        memcpy(tmp, back_node->data, 16);
+        memcpy(tmp, &(back_node->data), 16);
         AES_decrypt(tmp, tmp, dec_key);
         
         packet->msgType = DATA;
@@ -269,7 +286,7 @@ void deletion(List *out, int index, int del_len, const void *enc_key, const void
         memset(msg, 0, BUFSIZE);
         tmp[0] = front_link;
         AES_encrypt(tmp, tmp, enc_key);
-        memcpy(back_node->data, tmp, 16);
+        memcpy(&(back_node->data), tmp, 16);
         packet->msgType = DATA;
         node_send->inst = INSERT;
         node_send->index = back_block_num;
@@ -279,8 +296,6 @@ void deletion(List *out, int index, int del_len, const void *enc_key, const void
         write(socket, msg, BUFSIZE);
         memset(msg, 0, BUFSIZE);
 
-        front_node->prev->next = back_node->next;
-        back_node->next->prev = front_node->prev;
         for(int i = front_block_num; i < back_block_num; i++)
         {
             packet->msgType = DATA;
@@ -294,9 +309,7 @@ void deletion(List *out, int index, int del_len, const void *enc_key, const void
 
         out->count = out->count - (back_block_num - front_block_num);
 
-        modify_gmeta = calloc(out->count, sizeof(unsigned char));
-        memcpy(modify_gmeta, plain_gmeta, front_block_num);
-        memcpy(modify_gmeta, plain_gmeta+back_block_num, out->count - front_block_num);
+        delete_global(plain_gmeta, front_block_num, back_block_num - front_block_num);
 
         free(packet);
         free(node_send);
@@ -309,11 +322,10 @@ void deletion(List *out, int index, int del_len, const void *enc_key, const void
         PACKET *packet = calloc(1, sizeof(PACKET));
         NODE_SEND *node_send = calloc(1, sizeof(NODE_SEND));
         unsigned char tmp[16] = {0, };
-        memcpy(tmp, front_node->data, 16);
-        AES_decrypt(tmp, tmp, dec_key);
+        int cnt = 0;
+        AES_decrypt(&(front_node->data), tmp, dec_key);
         front_link = tmp[0];
-        memcpy(tmp, back_node->data, 16);
-        AES_decrypt(tmp, tmp, dec_key);
+        AES_decrypt(&(back_node->data), tmp, dec_key);
         back_link = tmp[15];
         memcpy(&meta, &tmp[1], 2);
         int n = front_block_num;
@@ -332,14 +344,16 @@ void deletion(List *out, int index, int del_len, const void *enc_key, const void
             {
                 tmp[i] = 0;
                 meta = meta ^ check_bitmap;
+                cnt++;
             }
             check_bitmap = check_bitmap >> 1;
         }
         memcpy(&tmp[1], &meta, 2);
-        AES_encrypt(tmp, back_node->data, 16);
+        tmp[0] = front_link;
+        tmp[15] = back_link;
+        plain_gmeta[back_block_num - 1] = (char)cnt;
+        AES_encrypt(tmp, tmp, 16);
 
-        front_node->prev->next = back_node;
-        back_node->prev = front_node->prev;
         for(int i = front_block_num; i < back_block_num; i++)
         {
             packet->msgType = DATA;
@@ -360,6 +374,8 @@ void deletion(List *out, int index, int del_len, const void *enc_key, const void
         write(socket, msg, BUFSIZE);
         memset(msg, 0, BUFSIZE);
 
+        delete_global(plain_gmeta, front_block_num, back_block_num - front_block_num - 2);
+
 
         free(packet);
         free(node_send);
@@ -372,11 +388,10 @@ void deletion(List *out, int index, int del_len, const void *enc_key, const void
         PACKET *packet = calloc(1, sizeof(PACKET));
         NODE_SEND *node_send = calloc(1, sizeof(NODE_SEND));
         unsigned char tmp[16] = {0, };
-        memcpy(tmp, front_node->data, 16);
-        AES_decrypt(tmp, tmp, dec_key);
+        int cnt = 0;
+        AES_decrypt(&(front_node->data), tmp, dec_key);
         front_link = tmp[0];
-        memcpy(tmp, back_node->data, 16);
-        AES_decrypt(tmp, tmp, dec_key);
+        AES_decrypt(&(back_node->data), tmp, dec_key);
         back_link = tmp[15];
         memcpy(&meta, &tmp[1], 2);
 
@@ -401,9 +416,11 @@ void deletion(List *out, int index, int del_len, const void *enc_key, const void
             check_bitmap = check_bitmap << 1;
         }
         memcpy(&tmp[1], &meta, 2);
-
-        front_node->next = back_node->next;
-        back_node->next->prev = front_node;
+        tmp[0] = front_link;
+        tmp[15] = back_link;
+        plain_gmeta[front_block_num] = (char)cnt;
+        AES_encrypt(tmp, tmp, 16);
+ 
         for(int i = front_block_num; i < back_block_num; i++)
         {
             packet->msgType = DATA;
@@ -424,6 +441,8 @@ void deletion(List *out, int index, int del_len, const void *enc_key, const void
         write(socket, msg, BUFSIZE);
         memset(msg, 0, BUFSIZE);
 
+        delete_global(plain_gmeta, front_block_num + 1, back_block_num - front_block_num - 1);
+
         free(packet);
         free(node_send);
     }
@@ -438,7 +457,7 @@ void deletion(List *out, int index, int del_len, const void *enc_key, const void
         int back_len = 0;
         unsigned char *data;
         unsigned char tmp[16] = {0, };
-        AES_decrypt(front_node->data, tmp, dec_key);
+        AES_decrypt(&(front_node->data), tmp, dec_key);
         front_link = tmp[0];
         memcpy(&meta, &tmp[1], 2);
 
@@ -458,13 +477,13 @@ void deletion(List *out, int index, int del_len, const void *enc_key, const void
         unsigned short check_bitmap = (unsigned short)BITMAP_SEED;
 
         int n = 0;
-        int i = 0;
-        while(n < 12 && i < front_len)
+        int cnt = 0;
+        while(n < 12 && cnt < front_len)
         {
             if(meta & check_bitmap != 0)
             {
-                data[i] = tmp[n + LINK_LENGTH + METADATA_LENGTH];
-                i++;
+                data[cnt] = tmp[n + LINK_LENGTH + METADATA_LENGTH];
+                cnt++;
             }
 
             check_bitmap = check_bitmap >> 1;
@@ -472,27 +491,27 @@ void deletion(List *out, int index, int del_len, const void *enc_key, const void
 
         }
 
-        AES_decrypt(back_node->data, tmp, dec_key);
+        AES_decrypt(&(back_node->data), tmp, dec_key);
         back_link = tmp[15];
 
         memcpy(&meta, &tmp[1], 2);
 
         check_bitmap = (unsigned short)1;
         n = 11;
-        i = front_len + back_len -1;
-        while(n >= 0 && i >= front_len)
+        cnt = front_len + back_len -1;
+        while(n >= 0 && cnt >= front_len)
         {
             if(meta & check_bitmap != 0)
             {
-                data[i] = tmp[n + LINK_LENGTH + METADATA_LENGTH];
-                i--;
+                data[cnt] = tmp[n + LINK_LENGTH + METADATA_LENGTH];
+                cnt--;
             }
 
             check_bitmap = check_bitmap << 1;
             n--;
         }
 
-        for(i = front_block_num; i < back_block_num; i++)
+        for(cnt = front_block_num; cnt < back_block_num; cnt++)
         {
             packet->msgType = DATA;
             node_send->inst = DELETE;
@@ -506,15 +525,36 @@ void deletion(List *out, int index, int del_len, const void *enc_key, const void
         List *new_list;
         InitList(new_list);
         encrypt(data, new_list, front_len + back_len, enc_key, front_link, back_link);
-        front_node->prev->next = new_list->head->next;
-        new_list->head = front_node->prev;
-        back_node->next->prev = new_list->tail->prev;
-        new_list->tail = back_node->next;
+
+        unsigned char *add_global = calloc((front_len + back_len)/12 + 1, sizeof(unsigned char));
+        int len = front_len + back_len;
+        int i = 0;
+        while(len > 0)
+        {
+            if(len > 12)
+                add_global[i] = (unsigned char)12;
+
+            else
+                add_global[i] = (unsigned char)len;
+            len -= 12;
+        }
+
+        delete_global(plain_gmeta, front_block_num, back_block_num - front_block_num);
+        insert_global(plain_gmeta, add_global, front_block_num);
+
 
         free(packet);
         free(node_send);
     }
 
+    global_encrypt(plain_gmeta, global_meta, out->count, enc_key);
+    PACKET *packet = calloc(1, sizeof(PACKET));
+    packet->msgType = GLOBAL_META;
+    memcpy(packet->data, global_meta, gmeta_len);
+    packing_data(packet, msg);
+    write(socket, msg, BUFSIZE);
+    memset(msg, 0, BUFSIZE);
+    write(socket, "finish", BUFSIZE);
 }
 
 void insertion(unsigned char *in, List *out, int index, int ins_len, const void *enc_key, const void *dec_key, 
@@ -527,18 +567,19 @@ void insertion(unsigned char *in, List *out, int index, int ins_len, const void 
     unsigned char *insert_data;
     unsigned char *plain_gmeta;
 
+    List *list;
+    InitList(list);
+
     Node *node;
     unsigned short meta;
 
     unsigned char msg[BUFSIZE] = {0, };
 
-    int gmeta_len = out->count;
-
-    if(index == 0 && gmeta_len == 0)
+    if(index == 0 && out->count == 0)
     {
         int cnt = 0;
-        encrypt(in, out, ins_len, enc_key, front_link, front_link);
-        for(int i = 0; i < out->count; i++)
+        encrypt(in,list, ins_len, enc_key, front_link, front_link);
+        for(int i = 0; i < list->count; i++)
         {
             node = seekNode(out, i);
             PACKET *packet = calloc(1, sizeof(PACKET));
@@ -547,7 +588,7 @@ void insertion(unsigned char *in, List *out, int index, int ins_len, const void 
             node_send->inst = INSERT;
             node_send->index = i;
             node_send->data = calloc(16, sizeof(unsigned char));
-            memcpy(node_send->data, node->data, 16);
+            memcpy(node_send->data, &(node->data), 16);
             packet->data = node_send;
             packing_data(packet, msg);
             write(socket, msg, BUFSIZE);
@@ -555,8 +596,7 @@ void insertion(unsigned char *in, List *out, int index, int ins_len, const void 
             free(packet);
             free(node_send);
         }
-        gmeta_len = out->count;
-        plain_gmeta = calloc(gmeta_len, sizeof(unsigned char));
+        plain_gmeta = calloc(list->count, sizeof(unsigned char));
         while(ins_len > 12)
         {
             plain_gmeta[cnt] = 12;
@@ -565,25 +605,25 @@ void insertion(unsigned char *in, List *out, int index, int ins_len, const void 
         }
         plain_gmeta[cnt] = ins_len;
 
-        global_encrypt(plain_gmeta, global_meta, gmeta_len, enc_key);
+        global_encrypt(plain_gmeta, global_meta, list->count, enc_key);
         PACKET *packet = calloc(1, sizeof(PACKET));
         packet->msgType = GLOBAL_META;
         packet->data = global_meta;
         packing_data(packet, msg);
         write(socket, msg, BUFSIZE);
+
+        write(socket, "finish", BUFSIZE);
         return;
     }
 
-    int gmeta_push = 0;
-
     int enc_gmeta_len;
-    if(gmeta_len%(AES_BLOCK_SIZE - 2*LINK_LENGTH) == 0)
-        enc_gmeta_len = (gmeta_len/(AES_BLOCK_SIZE - 2*LINK_LENGTH))*AES_BLOCK_SIZE;
+    if((out->count)%(AES_BLOCK_SIZE - 2*LINK_LENGTH) == 0)
+        enc_gmeta_len = ((out->count)/(AES_BLOCK_SIZE - 2*LINK_LENGTH))*AES_BLOCK_SIZE;
     else
-        enc_gmeta_len = (gmeta_len/(AES_BLOCK_SIZE - 2*LINK_LENGTH)+1)*AES_BLOCK_SIZE;
+        enc_gmeta_len = ((out->count)/(AES_BLOCK_SIZE - 2*LINK_LENGTH)+1)*AES_BLOCK_SIZE;
         
     
-    plain_gmeta = calloc(gmeta_len, sizeof(unsigned char));
+    plain_gmeta = calloc((out->count), sizeof(unsigned char));
 
     global_decrypt(global_meta, plain_gmeta, enc_gmeta_len, dec_key);
 
@@ -608,8 +648,7 @@ void insertion(unsigned char *in, List *out, int index, int ins_len, const void 
         insert_data = calloc(ins_len, sizeof(unsigned char));
         node = seekNode(out, block_num);
 
-        memcpy(tmp, node->data, 16);
-        AES_decrypt(tmp, tmp, dec_key);
+        AES_decrypt(&(node->data), tmp, dec_key);
         front_link = tmp[0];
         back_link = tmp[15];
         memcpy(&meta, &tmp[1], 2);
@@ -628,15 +667,44 @@ void insertion(unsigned char *in, List *out, int index, int ins_len, const void 
         memcpy(insert_data+(index - check), in, ins_len - (int)plain_gmeta[block_num]);
         memcpy(insert_data - ((int)plain_gmeta[block_num] - (index - check)), add_data+(index - check), (int)plain_gmeta[block_num] - (index - check));
 
-        if(ins_len%12 == 0)
-            gmeta_push = ins_len/12;
-        else
-            gmeta_push = ins_len/12+1;
-        
-        modify_gmeta = calloc(out->count + gmeta_push, sizeof(unsigned char));
-        memcpy(modify_gmeta, plain_gmeta, block_num);
-        memcpy(modify_gmeta + block_num + gmeta_push, plain_gmeta + block_num + 1, out->count - block_num - 1);
+        int len = strlen(insert_data);
+        unsigned char *add_global = calloc(len/12 + 1, sizeof(unsigned char));
+        if(len > 12)
+        {
+            plain_gmeta[block_num] += (index - check);
+            len -= (index - check);
+        }
+        int i = 0;
+        while(len > 0)
+        {
+            if(len > 12)
+                add_global[i] = (unsigned char)12;
 
+            else
+                add_global[i] = (unsigned char)len;
+            len -= 12;
+        }
+
+        encrypt(insert_data, list, ins_len + strlen(add_data), enc_key, front_link, back_link);
+        for(int i = 0; i < list->count; i++)
+        {
+            node = seekNode(out, i);
+            PACKET *packet = calloc(1, sizeof(PACKET));
+            packet->msgType = DATA;
+            NODE_SEND *node_send = calloc(1, sizeof(NODE_SEND));
+            node_send->inst = INSERT;
+            node_send->index = i + block_num;
+            node_send->data = calloc(16, sizeof(unsigned char));
+            memcpy(node_send->data, &(node->data), 16);
+            packet->data = node_send;
+            packing_data(packet, msg);
+            write(socket, msg, BUFSIZE);
+            memset(msg, 0, BUFSIZE);
+            free(packet);
+            free(node_send);
+        }
+
+        insert_global(plain_gmeta, insert_data, index);
     }
 
     else
@@ -645,7 +713,7 @@ void insertion(unsigned char *in, List *out, int index, int ins_len, const void 
         PACKET *packet = calloc(1, sizeof(PACKET));
         NODE_SEND *node_send = calloc(1, sizeof(NODE_SEND));
         unsigned char tmp[16] = {0, };
-        AES_decrypt(prev_node->data, tmp, dec_key);
+        AES_decrypt(&(prev_node->data), tmp, dec_key);
         packet->msgType = DATA;
         node_send->inst = DELETE;
         node_send->index = block_num - 1;
@@ -659,14 +727,14 @@ void insertion(unsigned char *in, List *out, int index, int ins_len, const void 
         packet->msgType = DATA;
         node_send->inst = INSERT;
         node_send->index = block_num - 2;
-        memcpy(node_send->data, tmp, 16);
+        memcpy(&(node_send->data), tmp, 16);
         packet->data = node_send;
         packing_data(packet, msg);
         write(socket, msg, BUFSIZE);
         memset(msg, 0, BUFSIZE);
 
         Node *next_node = seekNode(out, block_num);
-        AES_decrypt(next_node->data, tmp, dec_key);
+        AES_decrypt(&(next_node->data), tmp, dec_key);
         packet->msgType = DATA;
         node_send->inst = DELETE;
         node_send->index = block_num;
@@ -676,7 +744,7 @@ void insertion(unsigned char *in, List *out, int index, int ins_len, const void 
         memset(msg, 0, BUFSIZE);
 
         tmp[0] = back_link;
-        AES_encrypt(tmp, prev_node->data, enc_key);
+        AES_encrypt(tmp, &(prev_node->data), enc_key);
         packet->msgType = DATA;
         node_send->inst = DELETE;
         node_send->index = block_num - 1;
@@ -685,23 +753,12 @@ void insertion(unsigned char *in, List *out, int index, int ins_len, const void 
         write(socket, msg, BUFSIZE);
         memset(msg, 0, BUFSIZE);
         memcpy(insert_data, in, ins_len);
-
-        if(ins_len%12 == 0)
-            gmeta_push = ins_len/12;
-        else
-            gmeta_push = ins_len/12+1;
-        
-        modify_gmeta = calloc(out->count + gmeta_push, sizeof(unsigned char));
-        memcpy(modify_gmeta, plain_gmeta, block_num);
-        memcpy(modify_gmeta + block_num + gmeta_push, plain_gmeta + block_num, out->count - block_num);
         
         free(packet);
         free(prev_node);
         free(next_node);
     }
 
-    List *list;
-    InitList(list);
     encrypt(insert_data, list, ins_len, enc_key, front_link, back_link);
     list->head = seekNode(out, block_num-1);
     list->tail = seekNode(out, block_num);
@@ -714,7 +771,7 @@ void insertion(unsigned char *in, List *out, int index, int ins_len, const void 
         node_send->inst = INSERT;
         node_send->index = i + block_num;
         node_send->data = calloc(16, sizeof(unsigned char));
-        memcpy(node_send->data, node->data, 16);
+        memcpy(node_send->data, &(node->data), 16);
         packet->data = node_send;
         packing_data(packet, msg);
         write(socket, msg, BUFSIZE);
@@ -740,81 +797,34 @@ void insertion(unsigned char *in, List *out, int index, int ins_len, const void 
     write(socket, msg, BUFSIZE);
     free(packet);
 
-}
+    write(socket, "finish", BUFSIZE);
 
-void InitList(List *list)
-{
-    unsigned char data[16] = {0, };
-    list->head = createNode(data);
-    list->tail = createNode(data);
-    list->head->next = list->tail;
-    list->tail->prev = list->head;
-    list->count = 0;
-
-    return;  
-}
-
-Node *createNode(unsigned char data[16])
-{
-    Node *new_node = (Node *)calloc(1, sizeof(Node));
-
-    memcpy(new_node->data, data, 16); 
-
-    return new_node;
-}
-
-void removeNode(Node *this)
-{
-    this->prev->next = this->next;
-    this->next->prev = this->prev;
-    free(this);
-}
-
-Node *seekNode(List *list, int index)
-{
-    Node *seek = list->head;
-    for(int i = 0; i < index; i++)
-    {
-        seek = seek->next;
-    }
-    return seek;
-}
-
-void insertNode(Node *this, Node *next)
-{    
-    this->prev = next->prev;
-    this->next = next;
-    next->prev->next = this;
-    next->prev = this;
-
-
-
-    return;
 }
 
 void packing_data(PACKET *packet, unsigned char *msg)
 {
-    memcpy(msg, packet->msgType, 1);
+    memcpy(msg, &(packet->msgType), 1);
     msg++;
     if(packet->msgType == 0x00)
         memcpy(msg, packet->data, sizeof(packet->data));
     else
     {
-        memcpy(msg, ((NODE_SEND*)packet->data)->inst, 1);
+        memcpy(msg, &(((NODE_SEND*)packet->data)->inst), 1);
         msg++;
-        memcpy(msg, ((NODE_SEND*)packet->data)->index, sizeof(int));
+        memcpy(msg, &(((NODE_SEND*)packet->data)->index), sizeof(int));
         msg += sizeof(int);
         memcpy(msg, ((NODE_SEND*)packet->data)->data, sizeof(((NODE_SEND*)packet->data)->data));
     }
 }
 
-void unpacking_data(unsigned char *msg, unsigned char *global_meta, List *list, Node *new_node)
+void unpacking_global(unsigned char *msg, unsigned char *global_meta)
 {
-    if(msg[0] == GLOBAL_META)
-        memcpy(global_meta, msg+1, BUFSIZE - 1);
-    else if(msg[0] == DATA)
-    {
-        if(msg[1] == DELETE)
+    memcpy(global_meta, msg+1, BUFSIZE - 1);
+}
+
+void unpacking_data(unsigned char *msg, Node *new_node, List *list)
+{
+    if(msg[1] == DELETE)
         {
             Node *node = calloc(1, sizeof(Node));
             int index;
@@ -826,16 +836,13 @@ void unpacking_data(unsigned char *msg, unsigned char *global_meta, List *list, 
         }
         else if(msg[1] == INSERT)
         {
-            memcpy(new_node->data, msg+6, AES_BLOCK_SIZE);
+            memcpy(&(new_node->data), msg+6, AES_BLOCK_SIZE);
             Node *node = calloc(1, sizeof(Node));
             int index;
-            memcpy(index, msg+2, sizeof(int));
+            memcpy(&index, msg+2, sizeof(int));
             node = seekNode(list, index);
             node->prev = new_node;
             new_node->next = node;
             free(node);
         }
-    }
-
-
 }
