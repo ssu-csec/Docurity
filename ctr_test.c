@@ -45,16 +45,27 @@ void ctr_decrypt(List *in, unsigned char *out, unsigned char *ivec, unsigned int
 
 void ctr_insert(unsigned char *in, List *out, unsigned char *ivec, int index, unsigned int *last_num, int ins_len, const void *enc_key)
 {
-    unsigned char *data = calloc(out->count, sizeof(unsigned char));
-    ctr_decrypt(out, data, ivec, last_num, enc_key);
-    unsigned char *new_data = calloc(out->count + (ins_len/AES_BLOCK_SIZE + 1) * AES_BLOCK_SIZE, sizeof(unsigned char));
-    memcpy(new_data, data, index - 1);
-    memcpy(new_data + index, in, ins_len);
-    memcpy(new_data + index + ins_len, data + index, out->count * AES_BLOCK_SIZE - index);
     List *list;
+    list = calloc(1, sizeof(List));
     InitList(list);
-    ctr_encrypt(new_data, list, out->count + (ins_len/AES_BLOCK_SIZE + 1) * AES_BLOCK_SIZE, ivec, last_num, enc_key);
-    ResetList(out);
+    if(out->count == 0)
+    {
+        unsigned char *data = calloc(ins_len, sizeof(unsigned char));
+        ctr_encrypt(data, list, (ins_len/AES_BLOCK_SIZE + 1) * AES_BLOCK_SIZE, ivec, last_num, enc_key);
+    }
+    else
+    {
+        unsigned char *data = calloc(out->count, sizeof(unsigned char));
+        ctr_decrypt(out, data, ivec, last_num, enc_key);
+        unsigned char *new_data = calloc(out->count + (ins_len/AES_BLOCK_SIZE + 1) * AES_BLOCK_SIZE, sizeof(unsigned char));
+        memcpy(new_data, data, index - 1);
+        memcpy(new_data + index, in, ins_len);
+        memcpy(new_data + index + ins_len, data + index, out->count * AES_BLOCK_SIZE - index);
+        
+        ctr_encrypt(new_data, list, out->count + (ins_len/AES_BLOCK_SIZE + 1) * AES_BLOCK_SIZE, ivec, last_num, enc_key);
+        ResetList(out);
+        
+    }
     Node *node = list->head;
     for(int i = 0; i < list->count; i++)
     {

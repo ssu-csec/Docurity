@@ -43,24 +43,39 @@ void cbc_decrypt(List *in, unsigned char *out, unsigned char *ivec, const void *
 
 void cbc_insert(unsigned char *in, List *out, unsigned char *ivec, int index, int ins_len, const void *enc_key, const void *dec_key)
 {
-    unsigned char *data = calloc(out->count, sizeof(unsigned char));
-    cbc_decrypt(out, data, ivec, dec_key);
-    unsigned char *new_data = calloc(out->count + (ins_len/AES_BLOCK_SIZE + 1) * AES_BLOCK_SIZE, sizeof(unsigned char));
-    memcpy(new_data, data, index - 1);
-    memcpy(new_data + index, in, ins_len);
-    memcpy(new_data + index + ins_len, data + index, out->count * AES_BLOCK_SIZE - index);
     List *list;
+    list = calloc(1, sizeof(List));
     InitList(list);
-    cbc_encrypt(new_data, list, out->count + (ins_len/AES_BLOCK_SIZE + 1) * AES_BLOCK_SIZE, ivec, enc_key);
-    ResetList(list);
+    if(out->count == 0)
+    {
+        unsigned char *data = calloc(ins_len, sizeof(unsigned char));
+        cbc_encrypt(data, list, (ins_len/AES_BLOCK_SIZE + 1) * AES_BLOCK_SIZE, ivec, enc_key);
+
+    }
+    else
+    {
+        unsigned char *data = calloc(out->count, sizeof(unsigned char));
+        cbc_decrypt(out, data, ivec, dec_key);
+        unsigned char *new_data = calloc(out->count + (ins_len/AES_BLOCK_SIZE + 1) * AES_BLOCK_SIZE, sizeof(unsigned char));
+        memcpy(new_data, data, index - 1);
+        memcpy(new_data + index, in, ins_len);
+        memcpy(new_data + index + ins_len, data + index, out->count * AES_BLOCK_SIZE - index);
+
+        cbc_encrypt(new_data, list, out->count + (ins_len/AES_BLOCK_SIZE + 1) * AES_BLOCK_SIZE, ivec, enc_key);
+        ResetList(out);
+        
+    }
     Node *node = list->head;
     for(int i = 0; i < list->count; i++)
     {
         node = node->next;
         insertNode(node, out->tail);
     }
+
     free(node);
     free(list);
+
+    return;
 }
 
 void cbc_delete(List *out, unsigned char *ivec, int index, int del_len, const void *enc_key, const void *dec_key)
