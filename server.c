@@ -4,14 +4,21 @@
 #include <unistd.h>
 #include <arpa/inet.h>
 #include <sys/socket.h>
+#include <pthread.h>
 #include "form.h"
+
+#define CLIENT_MAX 30
+
+void server(int socket);
 void error_handling(char *message);
 
 int main(int argc, char *argv[])
 {
 	int serv_sock;
 	int clnt_sock;
-    int i = 0;
+    int connectCnt = 0;
+
+	pthread_t thread_id;
 
 	struct sockaddr_in serv_addr;
 	struct sockaddr_in clnt_addr;
@@ -102,6 +109,24 @@ int main(int argc, char *argv[])
 
 	close(serv_sock);
 	return 0;
+}
+
+void server(int socket)
+{
+	char writeBuf[256] = "received well!";
+	char readBuf[256];
+
+	while(1)
+	{
+		read(socket, &readBuf, sizeof(readBuf));
+		printf("%s\n", readBuf);
+		write(socket, &writeBuf, sizeof(writeBuf));
+
+		if((strcmp(readBuf, "quit"))==0)
+			break;
+	}
+
+	close(socket);
 }
 
 void error_handling(char *message)
