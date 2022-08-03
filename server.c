@@ -17,9 +17,8 @@ int main(int argc, char *argv[])
 	struct sockaddr_in clnt_addr;
 	socklen_t clnt_addr_size;
 
-    unsigned char msg[BUFSIZE] = {0, };
-	char writeBuf[256] = "received well!";
-	char readBuf[256];
+	unsigned char writeBuf[BUFSIZE] = {0, };
+	unsigned char readBuf[BUFSIZE] = {0, };
 
 	if(argc != 2)
 	{
@@ -44,6 +43,12 @@ int main(int argc, char *argv[])
 	
 	clnt_addr_size = sizeof(clnt_addr);
 
+	List *list;
+	list = calloc(1, sizeof(List));
+	InitList(list);
+	unsigned char *global_meta;
+	global_meta = calloc(BUFSIZE, sizeof(unsigned char));
+
 	while(1)
 	{
 		clnt_sock=accept(serv_sock, (struct sockaddr_in*)&clnt_addr, &clnt_addr_size);
@@ -53,9 +58,45 @@ int main(int argc, char *argv[])
 			printf("Connected client %d \n", ++i);
 		while(1)
 		{
-			read(clnt_sock, &readBuf, sizeof(readBuf));
-			printf("%s\n", readBuf);
+			writeBuf[0] = GLOBAL_META;
+			memcpy(&writeBuf+1, global_meta, BUFSIZE -1);
 			write(clnt_sock, &writeBuf, sizeof(writeBuf));
+			memset(&writeBuf, 0, BUFSIZE);
+			Node *node = calloc(1, sizeof(Node));
+			node = list->head->next;
+			for(int i = 0; i < list->count; i++)
+			{
+				PACKET *packet = calloc(1, sizeof(packet));
+				packet->msgType = DATA;
+				NODE_SEND *node_send = calloc(1, sizeof(NODE_SEND));
+				packet->data = node_send;
+				node_send->inst = INSERT;
+				node_send->index = i;
+				memcpy(node_send->data, node->data, 16);
+				packing_data(packet, &writeBuf);
+				write(clnt_sock, &writeBuf, sizeof(writeBuf));
+				memset(&writeBuf, 0, BUFSIZE);
+				node = node->next;
+				free(packet);
+				free(node_send);
+			}
+			write(clnt_sock, "finish", BUFSIZE);
+			while(1)
+			{
+				read(clnt_sock, &readBuf, sizeof(readBuf));
+				if(strncmp(readBuf, "finish", 6) == 0)
+					break;
+				else if(readBuf[0] == GLOBAL_META)
+					unpacking_global(readBuf, global_meta);
+				else if(readBuf[0] == DATA)
+				{
+					Node *new_node = calloc(1, sizeof(Node));
+					unpacking_data(readBuf, new_node, list);
+				}
+				memset(&readBuf, 0, BUFSIZE);
+			}
+			//printf("%s\n", readBuf);
+
 		}
 	}
 
