@@ -41,7 +41,7 @@ void cbc_decrypt(List *in, unsigned char *out, unsigned char *ivec, const void *
     CRYPTO_cbc128_decrypt(data, out, in->count * AES_BLOCK_SIZE, dec_key, ivec, (block128_f)AES_decrypt);
 }
 
-void cbc_insert(unsigned char *in, List *out, unsigned char *ivec, int index, int ins_len, const void *enc_key, const void *dec_key, int socket)
+void cbc_insert(unsigned char *in, List *out, unsigned char *ivec, int index, int ins_len, const void *enc_key, const void *dec_key)
 {
     unsigned char *data = calloc(out->count, sizeof(unsigned char));
     cbc_decrypt(out, data, ivec, dec_key);
@@ -63,7 +63,7 @@ void cbc_insert(unsigned char *in, List *out, unsigned char *ivec, int index, in
     free(list);
 }
 
-void cbc_delete(List *out, unsigned char *ivec, int index, int del_len, const void *enc_key, const void *dec_key, int socket)
+void cbc_delete(List *out, unsigned char *ivec, int index, int del_len, const void *enc_key, const void *dec_key)
 {
     unsigned char *data = calloc(out->count, sizeof(unsigned char));
     cbc_decrypt(out, data, ivec, dec_key);

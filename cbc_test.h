@@ -13,6 +13,6 @@ void cbc_encrypt(const unsigned char *in, List *out, size_t len, unsigned char *
 
 void cbc_decrypt(List *in, unsigned char *out, unsigned char *ivec, const void *dec_key);
 
-void cbc_insert(unsigned char *in, List *out, unsigned char *ivec, int index, int ins_len, const void *enc_key, const void *dec_key, int socket);
+void cbc_insert(unsigned char *in, List *out, unsigned char *ivec, int index, int ins_len, const void *enc_key, const void *dec_key);
 
-void cbc_delete(List *out, unsigned char *ivec, int index, int del_len, const void *enc_key, const void *dec_key, int socket);
+void cbc_delete(List *out, unsigned char *ivec, int index, int del_len, const void *enc_key, const void *dec_key);

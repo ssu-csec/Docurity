@@ -43,7 +43,7 @@ void ctr_decrypt(List *in, unsigned char *out, unsigned char *ivec, unsigned int
     CRYPTO_ctr128_encrypt(in, data, in->count * AES_BLOCK_SIZE, dec_key, ivec, ecount_buf, &last_num, (block128_f)AES_encrypt);
 }
 
-void ctr_insert(unsigned char *in, List *out, unsigned char *ivec, int index, unsigned int *last_num, int ins_len, const void *enc_key, int socket)
+void ctr_insert(unsigned char *in, List *out, unsigned char *ivec, int index, unsigned int *last_num, int ins_len, const void *enc_key)
 {
     unsigned char *data = calloc(out->count, sizeof(unsigned char));
     ctr_decrypt(out, data, ivec, last_num, enc_key);
@@ -65,7 +65,7 @@ void ctr_insert(unsigned char *in, List *out, unsigned char *ivec, int index, un
     free(list);
 }
 
-void ctr_delete(List *out, unsigned char *ivec, int index, int del_len, unsigned int *last_num, const void *enc_key, const void *dec_key, int socket)
+void ctr_delete(List *out, unsigned char *ivec, int index, int del_len, unsigned int *last_num, const void *dec_key)
 {
     unsigned char *data = calloc(out->count, sizeof(unsigned char));
     ctr_decrypt(out, data, ivec, last_num, dec_key);
@@ -74,7 +74,7 @@ void ctr_delete(List *out, unsigned char *ivec, int index, int del_len, unsigned
     memcpy(new_data + index , data + index + del_len, out->count * AES_BLOCK_SIZE - index - del_len);
     List *list;
     InitList(list);
-    ctr_encrypt(new_data, list,  - (del_len/AES_BLOCK_SIZE) * AES_BLOCK_SIZE, ivec, last_num, enc_key);
+    ctr_encrypt(new_data, list,  - (del_len/AES_BLOCK_SIZE) * AES_BLOCK_SIZE, ivec, last_num, dec_key);
     ResetList(out);
     Node *node = list->head;
     for(int i = 0; i < list->count; i++)

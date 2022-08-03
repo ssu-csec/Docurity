@@ -15,4 +15,4 @@ void ctr_decrypt(List *in, unsigned char *out, unsigned char *ivec, unsigned int
 
 void ctr_insert(unsigned char *in, List *out, unsigned char *ivec, int index, unsigned int *last_num, int ins_len, const void *enc_key, int socket);
 
-void ctr_delete(List *out, unsigned char *ivec, int index, int del_len, unsigned int *last_num, const void *enc_key, const void *dec_key, int socket)
+void ctr_delete(List *out, unsigned char *ivec, int index, int del_len, unsigned int *last_num, const void *enc_key, const void *dec_key, int socket);
