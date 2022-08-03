@@ -11,6 +11,6 @@ do
 	echo "${Operation}" >> $Tmpfile
 	echo "0" >> $Tmpfile
 	python3 -c "print('A'*${i})" >> $Tmpfile
-	cat $Tmpfile |xargs ./$Binary > $Output_$i
+	cat $Tmpfile |xargs ./$Binary > ${Output}_${i}
 done
 
