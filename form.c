@@ -467,6 +467,7 @@ void deletion(List *out, int index, int del_len, const void *enc_key, const void
 void insertion(unsigned char *in, List *out, int index, int ins_len, const void *enc_key, const void *dec_key, 
                 unsigned char *global_meta)                                                                      
 {
+	index--;
     srand(time(NULL));
     unsigned char front_link = rand()%256;
     unsigned char back_link = rand()%256;
@@ -486,8 +487,8 @@ void insertion(unsigned char *in, List *out, int index, int ins_len, const void 
     if(index == 0 && out->count == 0)
     {
         int cnt = 0;
-        encrypt(in, list, ins_len, enc_key, front_link, front_link);
-        plain_gmeta = calloc(list->count, sizeof(unsigned char));
+        encrypt(in, out, ins_len, enc_key, front_link, front_link);
+        plain_gmeta = calloc(out->count, sizeof(unsigned char));
         while(ins_len > 12)
         {
             plain_gmeta[cnt] = 12;
@@ -495,7 +496,7 @@ void insertion(unsigned char *in, List *out, int index, int ins_len, const void 
             cnt++;
         }
         plain_gmeta[cnt] = ins_len;
-        global_encrypt(plain_gmeta, global_meta, list->count, enc_key);
+        global_encrypt(plain_gmeta, global_meta, out->count, enc_key);
         return;
     }
     index--;
@@ -511,7 +512,7 @@ void insertion(unsigned char *in, List *out, int index, int ins_len, const void 
     global_decrypt(global_meta, plain_gmeta, enc_gmeta_len, dec_key);
     memset(global_meta, 0, BUFSIZE);
 
-    int check = 0;
+    int check = -1;
     int block_num = 0;
 
     while(check <= index)
