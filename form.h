@@ -22,10 +22,10 @@ void encrypt(const unsigned char *in, List *out, size_t len, const void *enc_key
 void decrypt(List *in, unsigned char *out, const void *dec_key);
 
 void deletion(List *out, int index, int del_len, const void *enc_key, const void *dec_key, 
-                unsigned char *global_meta, int socket);
+                unsigned char *global_meta);
 
 void insertion(unsigned char *in, List *out, int index, int ins_len, const void *enc_key, const void *dec_key, 
-                unsigned char *global_meta, int socket);
+                unsigned char *global_meta);
 
 void packing_data(PACKET *packet, unsigned char *msg);
 

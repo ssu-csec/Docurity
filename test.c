@@ -19,7 +19,7 @@ int main()
 
     List *cipherText = (List *)calloc(1, sizeof(List));
     InitList(cipherText);
-    unsigned char global_meta[128] = {0, };
+    unsigned char global_meta[BUFSIZE] = {0, };
 
     unsigned char front_ivec = rand() % 256;
     unsigned char back_ivec = front_ivec;
@@ -45,7 +45,7 @@ int main()
     while(1)
     {
         printf("Insert or Delete? ");
-        scanf("%s", &inst);
+        scanf("%s", inst);
         if(strncmp(inst, "finish", 6) == 0)
             break;
         printf("input index: ");
@@ -53,7 +53,7 @@ int main()
         if(strncmp(inst, "Insert", 6) == 0)
         {
             printf("input data: ");
-            scanf("%s", &input);
+            scanf("%s", input);
             insertion(input, cipherText, index, strlen(input), enc_key, dec_key, global_meta);
         }
         else if(strncmp(inst, "Delete", 6) == 0)
@@ -63,6 +63,8 @@ int main()
             scanf("%d", &length);
             deletion(cipherText, index, length, enc_key, dec_key, global_meta);
         }
+
+        printf("one loop finish!, %d\n", cipherText->count);
     }
 
     unsigned char result[BUFSIZE * 10];

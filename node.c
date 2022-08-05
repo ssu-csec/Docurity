@@ -62,8 +62,5 @@ void insertNode(Node *this, Node *next)
     this->next = next;
     next->prev->next = this;
     next->prev = this;
-
-
-
     return;
 }
