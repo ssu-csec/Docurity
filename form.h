@@ -9,11 +9,9 @@
 #define DATA_SIZE_IN_BLOCK  (LINKLESS_BLOCK_SIZE - METADATA_LENGTH)
 #define DATA_START          (LINK_LENGTH + METADATA_LENGTH)
 
-void global_encrypt(const unsigned char *in, unsigned char *out, size_t len,
-                    const void *enc_key);
+void encrypt_global_metadata(const unsigned char *in, unsigned char *out, size_t size, const void *enc_key);
 
-void global_decrypt(const unsigned char *in, unsigned char *out, size_t len, 
-                            const void *dec_key);
+unsigned char *decrypt_global_metadata(const unsigned char *in, size_t size, const void *dec_key);
 
 void insert_global(unsigned char *in, unsigned char *insert, int index);
 
@@ -45,6 +43,8 @@ void insertion(unsigned char *in, List *out, int index, int ins_len, const void 
 void first_insertion(unsigned char *in, List *out, int insert_length, const void *enc_key, unsigned char *global_meta);
 
 void update_metadata(unsigned char *global_metadata, int insert_size);
+
+int get_aes_block_count(int data_size);
 
 void free_node_safely(Node *prev_node, Node *next_node);
 
