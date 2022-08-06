@@ -92,6 +92,7 @@ void insert_global(unsigned char *in, unsigned char *insert, int index)
 
 void delete_global(unsigned char *in, int index, int length)
 {
+    index--;
     unsigned char *temp = calloc(strlen(in) - index - length, sizeof(unsigned char));
     memcpy(temp, in + index + length, strlen(in) - index - length);
     memcpy(in+index, temp, strlen(in) - index - length);
@@ -512,7 +513,7 @@ void insertion(unsigned char *in, List *out, int index, int ins_len, const void 
     global_decrypt(global_meta, plain_gmeta, enc_gmeta_len, dec_key);
     memset(global_meta, 0, BUFSIZE);
 
-    int check = -1;
+    int check = 0;
     int block_num = 0;
 
     while(check <= index)
@@ -528,13 +529,13 @@ void insertion(unsigned char *in, List *out, int index, int ins_len, const void 
         unsigned char *add_data = calloc((int)plain_gmeta[block_num], sizeof(unsigned char));
         unsigned char tmp[16] = {0, };
         ins_len += (int)plain_gmeta[block_num];
-        insert_data = calloc(ins_len, sizeof(unsigned char));
-        node = seekNode(out, block_num);
+        insert_data = calloc(ins_len + (int)plain_gmeta[block_num], sizeof(unsigned char));
+        node = seekNode(out, block_num + 1);
         AES_decrypt(&(node->data), tmp, dec_key);
         front_link = tmp[0];
         back_link = tmp[15];
         memcpy(&meta, &tmp[1], 2);
-        removeNode(seekNode(out, block_num));
+        removeNode(seekNode(out, block_num + 1));
         int cnt = 0;
 
         for (int n = LINK_LENGTH + METADATA_LENGTH; n < AES_BLOCK_SIZE - LINK_LENGTH; ++n)
@@ -551,13 +552,14 @@ void insertion(unsigned char *in, List *out, int index, int ins_len, const void 
         memcpy(insert_data - ((int)plain_gmeta[block_num] - (index - check)), add_data+(index - check), (int)plain_gmeta[block_num] - (index - check));
 
         ins_len = ins_len + strlen(add_data);
+        block_num++;
         
         delete_global(plain_gmeta, block_num, 1);
     }
 
     else                                                                // index is located between two blocks
     {
-        Node *prev_node = seekNode(out, block_num - 1);
+        Node *prev_node = seekNode(out, block_num);
         unsigned char tmp[16] = {0, };
         AES_decrypt(&(prev_node->data), tmp, dec_key);
         tmp[15] = front_link;
@@ -584,11 +586,7 @@ void insertion(unsigned char *in, List *out, int index, int ins_len, const void 
     free(next_node);
 
     unsigned char *add_global = calloc(ins_len/12 + 1, sizeof(unsigned char));
-    if(ins_len > 12)
-    {
-        plain_gmeta[block_num] += (index - check);
-        ins_len -= (index - check);
-    }
+
     int i = 0;
     while(ins_len > 0)
     {
@@ -597,6 +595,8 @@ void insertion(unsigned char *in, List *out, int index, int ins_len, const void 
 
         else
             add_global[i] = (unsigned char)ins_len;
+            
+        i++;
         ins_len -= 12;
     }
     insert_global(plain_gmeta, add_global, block_num);
