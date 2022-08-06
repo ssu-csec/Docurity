@@ -526,7 +526,7 @@ void insertion(unsigned char *in, List *out, int index, int insert_size, const v
     // First time of insertion
     if(index == 0 && filled_block_count == 0)
     {
-        first_insertion(in, out, insert_size, enc_key, enc_global_metadata);
+        first_insertion(in, out, insert_size, front_link, enc_key, enc_global_metadata);
         return;
     }
 
