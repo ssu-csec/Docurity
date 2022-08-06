@@ -45,11 +45,13 @@ void first_insertion(List *list, unsigned char *input, int insert_length, unsign
 
 void update_metadata(unsigned char *global_metadata, int insert_size);
 
+void replace_link(Node *node, unsigned char link, unsigned char offset, const void *enc_key, const void *dec_key);
+
 int copy_data(unsigned char *dst, unsigned char *src, unsigned short *bitmap);
 
 int get_aes_block_count(int data_size);
 
-int find_point(int index, int *block_num, unsigned char *global_metadata);
+int find_point(int index, int *block_index, unsigned char *global_metadata);
 
 void free_node_safely(Node *prev_node, Node *next_node);
 

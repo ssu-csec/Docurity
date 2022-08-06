@@ -528,47 +528,40 @@ void insertion(List *list, unsigned char *input, int index, int insert_size, con
     unsigned char *global_metadata = decrypt_global_metadata(enc_global_metadata, filled_block_count, dec_key);
     memset(enc_global_metadata, 0, BUFSIZE);        // clear original global metadata
 
-    int block_num = 0;
-    int point = find_point(index, &block_num, global_metadata);
+    int block_index = 0;
+    int point = find_point(index, &block_index, global_metadata);
 
     if(point == index)  // index is located between two blocks
     {
         insert_data = calloc(insert_size, sizeof(unsigned char));
-        Node *prev_node = seekNode(list, block_num);
+        Node *prev_node = seekNode(list, block_index);
+        Node *next_node = seekNode(list, block_index);
 
-        unsigned char tmp[16] = {0, };
+        unsigned char tmp_data[16] = {0, };
 
-        // Replace back link of prev_node
-        AES_decrypt(&(prev_node->data), tmp, dec_key);
-        tmp[15] = front_link;
-        AES_encrypt(tmp, &(prev_node->data), enc_key);
-
-        // Replace front link of next_node
-        Node *next_node = seekNode(list, block_num);
-        AES_decrypt(&(next_node->data), tmp, dec_key);
-        tmp[0] = back_link;
-        AES_encrypt(tmp, &(prev_node->data), enc_key);
+        replace_link(prev_node, front_link, 1, enc_key, dec_key);
+        replace_link(next_node, back_link, 0, enc_key, dec_key);
 
         // Copy data we want to insert
         memcpy(insert_data, input, insert_size);
     }
     else                // index is located in the middle of one block
     {
-        block_num++;
-        int origin_size = (int)global_metadata[block_num];
+        block_index++;
+        int origin_size = (int)global_metadata[block_index];
 
         unsigned char *front_origin = calloc(origin_size, sizeof(unsigned char));
         unsigned char tmp[16] = {0, };
 
         insert_data = calloc(insert_size + origin_size, sizeof(unsigned char));
 
-        Node *node = seekNode(list, block_num);            // block_num + 1 means the block we want to modify
+        Node *node = seekNode(list, block_index);            // block_index + 1 means the block we want to modify
         AES_decrypt(&(node->data), tmp, dec_key);
         front_link = tmp[0];
         back_link = tmp[15];
         memcpy(&bitmap, &tmp[1], 2);
 
-        removeNode(seekNode(list, block_num));
+        removeNode(seekNode(list, block_index));
 
         copy_data(tmp, front_origin, &bitmap);      // Copy data from previous node
 
@@ -583,13 +576,13 @@ void insertion(List *list, unsigned char *input, int index, int insert_size, con
 
         insert_size += origin_size;
         
-        delete_global(global_metadata, block_num, 1);
+        delete_global(global_metadata, block_index, 1);
     }
 
     encrypt(insert_data, list, insert_size, enc_key, front_link, back_link);
 
-    Node *prev_node = seekNode(list, block_num - 1);
-    Node *next_node = seekNode(list, block_num);
+    Node *prev_node = seekNode(list, block_index - 1);
+    Node *next_node = seekNode(list, block_index);
 
     list->head->next->prev = prev_node;
     list->tail->prev->next = next_node;
@@ -601,7 +594,7 @@ void insertion(List *list, unsigned char *input, int index, int insert_size, con
 
     update_metadata(new_metadata, insert_size);
 
-    insert_global(global_metadata, new_metadata, block_num);
+    insert_global(global_metadata, new_metadata, block_index);
 
     encrypt_global_metadata(global_metadata, enc_global_metadata, filled_block_count, enc_key);
 
@@ -613,6 +606,7 @@ void first_insertion(List *list, unsigned char *input, int insert_size, unsigned
     int filled_block_count = list->count;
 
     encrypt(input, list, insert_size, enc_key, front_link, front_link);
+
     unsigned char *plain_gmeta = calloc(filled_block_count, sizeof(unsigned char));
     update_metadata(plain_gmeta, insert_size);
     encrypt_global_metadata(plain_gmeta, global_meta, filled_block_count, enc_key);
@@ -629,6 +623,17 @@ void update_metadata(unsigned char *global_metadata, int insert_size){
 
         insert_size -= DATA_SIZE_IN_BLOCK;
     }
+}
+
+void replace_link(Node *node, unsigned char link, unsigned char offset, const void *enc_key, const void *dec_key){
+    // offset = 0: front, 1: back
+    size_t data_size = sizeof(node->data);
+    unsigned char data[data_size] = {0, };
+    size_t index = offset == 0 ? 0 : (data_size - 1);
+
+    AES_decrypt(&(node->data), data, dec_key);
+    data[index] = link;
+    AES_encrypt(data, &(node->data), enc_key);
 }
 
 int copy_data(unsigned char *dst, unsigned char *src, unsigned short *bitmap){
@@ -654,17 +659,17 @@ int get_aes_block_count(int data_size){
         return(data_size / LINKLESS_BLOCK_SIZE + 1) * AES_BLOCK_SIZE;
 }
 
-int find_point(int index, int *block_num, unsigned char *global_metadata){
+int find_point(int index, int *block_index, unsigned char *global_metadata){
     int point = 0;
 
     while(point <= index)
     {
-        point += (int) global_metadata[*block_num];
-        *block_num++;
+        point += (int) global_metadata[*block_index];
+        (*block_index)++;
     }
 
-    *block_num--;
-    point -= (int) global_metadata[*block_num];
+    (*block_index)--;
+    point -= (int) global_metadata[*block_index];
 
     return point;
 }
