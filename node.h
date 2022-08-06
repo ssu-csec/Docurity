@@ -5,6 +5,9 @@
 #define METADATA_LENGTH 2
 #define BITMAP_SEED 2048
 
+typedef unsigned char link_t;
+typedef unsigned short bitmap_t;
+
 typedef struct _node
 {
     unsigned char data[16];

@@ -18,14 +18,14 @@ void insert_global(unsigned char *in, unsigned char *insert, int index);
 void delete_global(unsigned char *in, int index, int length);
 
 void encrypt(List *dst, const unsigned char *src, size_t len, const void *enc_key, 
-                           unsigned char front_ivec, unsigned char back_ivec);
+                           link_t front_ivec, link_t back_ivec);
 
 void decrypt(unsigned char *dst, List *src, const void *dec_key);
 
 void deletion(List *out, int index, int del_len, const void *enc_key, const void *dec_key, 
                 unsigned char *global_meta);
 
-void case1(List *out, int del_len, unsigned char front_link, int front_block_num, int back_block_num,
+void case1(List *out, int del_len, link_t front_link, int front_block_num, int back_block_num,
             const void *enc_key, const void *dec_key, unsigned char *plain_gmeta);
 
 void case2(List *out, int del_len, int front_block_num, int back_block_num,
@@ -40,14 +40,23 @@ void case4(List *out, int index, int del_len, int front_block_num, int back_bloc
 void insertion(List *list, unsigned char *input, int index, int ins_len, const void *enc_key, const void *dec_key, 
                 unsigned char *global_meta);
 
-void first_insertion(List *list, unsigned char *input, int insert_length, unsigned char front_link,
+void first_insertion(List *list, unsigned char *input, int insert_length, link_t front_link,
                 const void *enc_key, unsigned char *global_meta);
 
 void update_metadata(unsigned char *global_metadata, int insert_size);
 
-void replace_link(Node *node, unsigned char link, unsigned char offset, const void *enc_key, const void *dec_key);
+void extract_node(Node *node, link_t *front_link, link_t *back_link, bitmap_t *bitmap,
+                    unsigned char *data, const void *dec_key);
 
-int copy_data(unsigned char *dst, unsigned char *src, unsigned short *bitmap);
+link_t get_link(Node *node, char index, const void *dec_key);
+
+bitmap_t get_bitmap(Node *node, const void *dec_key);
+
+unsigned char *get_data(Node *node, const void *dec_key);
+
+void replace_link(Node *node, link_t link, char index, const void *enc_key, const void *dec_key);
+
+int copy_data(unsigned char *dst, unsigned char *src, bitmap_t *bitmap);
 
 int get_aes_block_count(int data_size);
 
