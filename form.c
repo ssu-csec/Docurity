@@ -123,7 +123,7 @@ void delete_global(unsigned char *in, int index, int length)
 
     int delete_position = in + index;
     int back_chunk_start = delete_position + length;
-    int back_chunk_size = strlen(in) - index - length
+    int back_chunk_size = strlen(in) - index - length;
     unsigned char *temp = calloc(back_chunk_size, sizeof(unsigned char));
 
     memcpy(temp, back_chunk_start, back_chunk_size);
@@ -300,25 +300,25 @@ void deletion(List *out, int index, int del_len, const void *enc_key, const void
 
     if(check1 == index && check2 == index + del_len)
     {
-        case1(out, front_link, front_block_num, back_block_num, enc_key, dec_key, plain_gmeta);
+        case1(out, del_len, front_link, front_block_num, back_block_num, enc_key, dec_key, plain_gmeta);
     }
     else if(check1 == index && check2 != index + del_len)
     {
-        case2(out, front_block_num, back_block_num, enc_key, dec_key, plain_gmeta);
+        case2(out, del_len, front_block_num, back_block_num, enc_key, dec_key, plain_gmeta);
     }
     else if(check1 != index && check2 == index + del_len)
     {
-        case3(out, front_block_num, back_block_num, enc_key, dec_key, plain_gmeta);
+        case3(out, del_len, front_block_num, back_block_num, enc_key, dec_key, plain_gmeta);
     }
     else
     {
-        case4(out, index, front_block_num, back_block_num, enc_key, dec_key, plain_gmeta);
+        case4(out, index, del_len, front_block_num, back_block_num, enc_key, dec_key, plain_gmeta);
     }
 
     global_encrypt(plain_gmeta, global_meta, out->count, enc_key);
 }
 
-void case1(List *out, unsigned char front_link, int front_block_num, int back_block_num,
+void case1(List *out, int del_len, unsigned char front_link, int front_block_num, int back_block_num,
             const void *enc_key, const void *dec_key, unsigned char *plain_gmeta){
     unsigned char tmp[16] = {0, };
 
@@ -337,7 +337,7 @@ void case1(List *out, unsigned char front_link, int front_block_num, int back_bl
     delete_global(plain_gmeta, front_block_num, back_block_num - front_block_num);
 }
 
-void case2(List *out, int front_block_num, int back_block_num,
+void case2(List *out, int del_len, int front_block_num, int back_block_num,
             const void *enc_key, const void *dec_key, unsigned char *plain_gmeta){
     unsigned char tmp[16] = {0, };
     unsigned short meta = 0;
@@ -395,7 +395,7 @@ void case2(List *out, int front_block_num, int back_block_num,
     delete_global(plain_gmeta, front_block_num, back_block_num - front_block_num - 2);
 }
 
-void case3(List *out, int front_block_num, int back_block_num,
+void case3(List *out, int del_len, int front_block_num, int back_block_num,
             const void *enc_key, const void *dec_key, unsigned char *plain_gmeta){
     unsigned char tmp[16] = {0, };
     unsigned short meta = 0;
@@ -452,7 +452,7 @@ void case3(List *out, int front_block_num, int back_block_num,
     delete_global(plain_gmeta, front_block_num + 1, back_block_num - front_block_num - 1);
 }
 
-void case4(List *out, int index, int front_block_num, int back_block_num,
+void case4(List *out, int index, int del_len, int front_block_num, int back_block_num,
             const void *enc_key, const void *dec_key, unsigned char *plain_gmeta){
     unsigned char tmp[16] = {0, };
     unsigned char *data;
@@ -484,7 +484,6 @@ void case4(List *out, int index, int front_block_num, int back_block_num,
     unsigned short check_bitmap = (unsigned short)BITMAP_SEED;
 
     int data_index = 0;
-    int cnt = 0;
 
     while(data_index < 12 && cnt < front_len)
     {
