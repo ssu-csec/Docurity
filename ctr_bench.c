@@ -11,6 +11,7 @@ int main()
 {
     srand(time(NULL));
 
+
     List *cipherText = (List *)calloc(1, sizeof(List));
     InitList(cipherText);
 
@@ -18,10 +19,6 @@ int main()
     enc_key = (AES_KEY*)malloc(sizeof(AES_KEY));
     unsigned char cts128_test_key[16] = "Jeonsan-Gwan-539";
     AES_set_encrypt_key(cts128_test_key, 128, enc_key);
-
-    AES_KEY *dec_key;
-    dec_key = (AES_KEY*)malloc(sizeof(AES_KEY));
-    AES_set_decrypt_key(cts128_test_key, 128, dec_key);
 
     unsigned char ivec[16] = {0, };
 
@@ -34,31 +31,32 @@ int main()
     unsigned char inst[10] = {0, };
     int index = 0;
 
+    unsigned int last_num = 0;
     while(1)
     {
-        printf("Insert or Delete? : ");
+        printf("Insert or Delete? ");
         scanf("%s", inst);
         if(strncmp(inst, "finish", 6) == 0)
             break;
-        printf("input index : ");
+        printf("input index: ");
         scanf("%d", &index);
         if(strncmp(inst, "Insert", 6) == 0)
         {
-            printf("input data : ");
+            printf("input data: ");
             scanf("%s", input);
-            cbc_insert(input, cipherText, ivec, index, strlen(input), enc_key, dec_key);
+            ctr_insert(input, cipherText, ivec, index, &last_num, strlen(input), enc_key);
         }
         else if(strncmp(inst, "Delete", 6) == 0)
         {
             int length = 0;
             printf("input delete length : ");
             scanf("%d", &length);
-            cbc_delete(cipherText, ivec, index, length, enc_key, dec_key);
+            ctr_delete(cipherText, ivec, index, length, &last_num, enc_key);
         } 
     }
 
     unsigned char result[BUFSIZE * 10] = {0, };
-    cbc_decrypt(cipherText, result, ivec, dec_key);
+    ctr_decrypt(cipherText, result, ivec, &last_num, enc_key);
 
     printf("decrypted data : %s", result);
 
