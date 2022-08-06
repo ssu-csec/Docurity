@@ -256,7 +256,7 @@ void decrypt(List *in, unsigned char *out, const void *dec_key)
     return;
 }
 
-void deletion(List *out, int index, int del_len, const void *enc_key, const void *dec_key, 
+void deletion(List *out, int index, int size, const void *enc_key, const void *dec_key, 
                 unsigned char *enc_global_metadata)                                          
 {
     srand(time(NULL));
@@ -267,57 +267,35 @@ void deletion(List *out, int index, int del_len, const void *enc_key, const void
 
     unsigned short bitmap = 0;
 
-    int gmeta_size = out->count;
+    unsigned char *global_metadata = decrypt_global_metadata(enc_global_metadata, out->count, dec_key);
 
-    unsigned char *global_metadata = decrypt_global_metadata(enc_global_metadata, gmeta_size, dec_key);
-
-    // check 1 process
-    int check1 = 0;
     int front_block_num = 0;
+    int start_point = find_point(index, &front_block_num, global_metadata);
 
-    while(check1 <= index)
-    {
-        check1 += (int) global_metadata[front_block_num];
-        front_block_num++;
-    }
-
-    front_block_num--;
-    check1 -= (int) global_metadata[front_block_num];
-
-    // check 2 process
-    int check2 = 0;
     int back_block_num = 0;
+    int end_point = find_point(index + size, &back_block_num, global_metadata);
 
-    while(check2 <= index + del_len)
+    if(start_point == index && end_point == index + size)
     {
-        check2 += (int)global_metadata[back_block_num];
-        back_block_num++;
+        case1(out, size, front_link, front_block_num, back_block_num, enc_key, dec_key, global_metadata);
     }
-    back_block_num--;
-    check2 -= (int)global_metadata[back_block_num];
-
-
-    if(check1 == index && check2 == index + del_len)
+    else if(start_point == index && end_point != index + size)
     {
-        case1(out, del_len, front_link, front_block_num, back_block_num, enc_key, dec_key, global_metadata);
+        case2(out, size, front_block_num, back_block_num, enc_key, dec_key, global_metadata);
     }
-    else if(check1 == index && check2 != index + del_len)
+    else if(start_point != index && end_point == index + size)
     {
-        case2(out, del_len, front_block_num, back_block_num, enc_key, dec_key, global_metadata);
-    }
-    else if(check1 != index && check2 == index + del_len)
-    {
-        case3(out, del_len, front_block_num, back_block_num, enc_key, dec_key, global_metadata);
+        case3(out, size, front_block_num, back_block_num, enc_key, dec_key, global_metadata);
     }
     else
     {
-        case4(out, index, del_len, front_block_num, back_block_num, enc_key, dec_key, global_metadata);
+        case4(out, index, size, front_block_num, back_block_num, enc_key, dec_key, global_metadata);
     }
 
     encrypt_global_metadata(global_metadata, enc_global_metadata, out->count, enc_key);
 }
 
-void case1(List *out, int del_len, unsigned char front_link, int front_block_num, int back_block_num,
+void case1(List *out, int size, unsigned char front_link, int front_block_num, int back_block_num,
             const void *enc_key, const void *dec_key, unsigned char *plain_gmeta){
     unsigned char tmp[16] = {0, };
 
@@ -336,7 +314,7 @@ void case1(List *out, int del_len, unsigned char front_link, int front_block_num
     delete_global(plain_gmeta, front_block_num, back_block_num - front_block_num);
 }
 
-void case2(List *out, int del_len, int front_block_num, int back_block_num,
+void case2(List *out, int size, int front_block_num, int back_block_num,
             const void *enc_key, const void *dec_key, unsigned char *plain_gmeta){
     unsigned char tmp[16] = {0, };
     unsigned short bitmap = 0;
@@ -352,24 +330,24 @@ void case2(List *out, int del_len, int front_block_num, int back_block_num,
     back_link = tmp[15];
     memcpy(&bitmap, &tmp[1], 2);
 
-    while(del_len > 0)
+    while(size > 0)
     {
-        del_len -= plain_gmeta[index];
+        size -= plain_gmeta[index];
         index++;
     }
 
     index--;
-    del_len += plain_gmeta[index];
+    size += plain_gmeta[index];
 
     unsigned short check_bitmap = (unsigned short)BITMAP_SEED;
     for(int i = DATA_START; i < AES_BLOCK_SIZE; i++)
     {
-        if((bitmap & check_bitmap) != 0 && del_len > 0)
+        if((bitmap & check_bitmap) != 0 && size > 0)
         {
             tmp[i] = 0;
             bitmap = bitmap ^ check_bitmap;
             cnt++;
-            del_len--;
+            size--;
         }
         check_bitmap = check_bitmap >> 1;
     }
@@ -394,7 +372,7 @@ void case2(List *out, int del_len, int front_block_num, int back_block_num,
     delete_global(plain_gmeta, front_block_num, back_block_num - front_block_num - 2);
 }
 
-void case3(List *out, int del_len, int front_block_num, int back_block_num,
+void case3(List *out, int size, int front_block_num, int back_block_num,
             const void *enc_key, const void *dec_key, unsigned char *plain_gmeta){
     unsigned char tmp[16] = {0, };
     unsigned short bitmap = 0;
@@ -410,20 +388,20 @@ void case3(List *out, int del_len, int front_block_num, int back_block_num,
     back_link = tmp[15];
     memcpy(&bitmap, &tmp[1], 2);
 
-    while(del_len > 0)
+    while(size > 0)
     {
-        del_len -= plain_gmeta[index];
+        size -= plain_gmeta[index];
         index--;
     }
 
     index++;
-    del_len += plain_gmeta[index];
+    size += plain_gmeta[index];
 
     unsigned short check_bitmap = (unsigned short)1;
 
     for(int i = AES_BLOCK_SIZE - 1; i >= DATA_START; i--)
     {
-        if((bitmap & check_bitmap) != 0 && del_len > 0)
+        if((bitmap & check_bitmap) != 0 && size > 0)
         {
             tmp[i] = 0;
             bitmap = bitmap ^ check_bitmap;
@@ -451,7 +429,7 @@ void case3(List *out, int del_len, int front_block_num, int back_block_num,
     delete_global(plain_gmeta, front_block_num + 1, back_block_num - front_block_num - 1);
 }
 
-void case4(List *out, int index, int del_len, int front_block_num, int back_block_num,
+void case4(List *out, int index, int size, int front_block_num, int back_block_num,
             const void *enc_key, const void *dec_key, unsigned char *plain_gmeta){
     unsigned char tmp[16] = {0, };
     unsigned char *data;
@@ -477,7 +455,7 @@ void case4(List *out, int index, int del_len, int front_block_num, int back_bloc
     {
         back_len += (int)plain_gmeta[i];
     }
-    back_len = back_len - (index + del_len);
+    back_len = back_len - (index + size);
 
     data = calloc(front_len + back_len, sizeof(unsigned char));
     unsigned short check_bitmap = (unsigned short)BITMAP_SEED;
@@ -572,20 +550,10 @@ void insertion(unsigned char *in, List *out, int index, int insert_size, const v
     unsigned char *global_metadata = decrypt_global_metadata(enc_global_metadata, filled_block_count, dec_key);
     memset(enc_global_metadata, 0, BUFSIZE);        // clear original global metadata
 
-    int check = 0;
     int block_num = 0;
+    int point = find_point(index, &block_num, global_metadata);
 
-    while(check <= index)
-    {
-        check += (int)global_metadata[block_num];
-        block_num++;
-    }
-
-    block_num--;
-    check -= (int)global_metadata[block_num];
-
-
-    if(check == index)  // index is located between two blocks
+    if(point == index)  // index is located between two blocks
     {
         insert_data = calloc(insert_size, sizeof(unsigned char));
         Node *prev_node = seekNode(out, block_num);
@@ -638,7 +606,7 @@ void insertion(unsigned char *in, List *out, int index, int insert_size, const v
             }
         }
 
-        int front_origin_size = index - check;
+        int front_origin_size = index - point;
         int back_origin_size = origin_size - front_origin_size;
         unsigned char *insert_position = front_origin_size + insert_data;
         unsigned char *back_origin = insert_data + insert_size + front_origin_size;
@@ -701,6 +669,21 @@ int get_aes_block_count(int data_size){
         return (data_size / LINKLESS_BLOCK_SIZE) * AES_BLOCK_SIZE;
     else
         return(data_size / LINKLESS_BLOCK_SIZE + 1) * AES_BLOCK_SIZE;
+}
+
+int find_point(int index, int *block_num, unsigned char *global_metadata){
+    int point = 0;
+
+    while(point <= index)
+    {
+        point += (int) global_metadata[block_num];
+        block_num++;
+    }
+
+    block_num--;
+    point -= (int) global_metadata[block_num];
+
+    return point
 }
 
 void free_node_safely(Node *prev_node, Node *next_node){

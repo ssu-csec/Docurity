@@ -46,6 +46,8 @@ void update_metadata(unsigned char *global_metadata, int insert_size);
 
 int get_aes_block_count(int data_size);
 
+int find_point(int index, int *block_num, unsigned char *global_metadata);
+
 void free_node_safely(Node *prev_node, Node *next_node);
 
 void packing_data(PACKET *packet, unsigned char *msg);
