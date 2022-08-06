@@ -36,7 +36,7 @@ void case2(List *out, int del_len, int front_block_num, int back_block_num,
 void case3(List *out, int del_len, int front_block_num, int back_block_num,
             const void *enc_key, const void *dec_key, unsigned char *plain_gmeta);
 
-void case4(List *out, int index, int del_len, int del_len, int front_block_num, int back_block_num,
+void case4(List *out, int index, int del_len, int front_block_num, int back_block_num,
             const void *enc_key, const void *dec_key, unsigned char *plain_gmeta);
 
 void insertion(unsigned char *in, List *out, int index, int ins_len, const void *enc_key, const void *dec_key, 
