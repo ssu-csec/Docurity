@@ -506,27 +506,22 @@ void case4(List *out, int index, int size, int front_block_num, int back_block_n
     insert_global(plain_gmeta, add_global, front_block_num);
 }
 
-void insertion(unsigned char *in, List *out, int index, int insert_size, const void *enc_key, const void *dec_key, 
+void insertion(unsigned char *input, List *list, int index, int insert_size, const void *enc_key, const void *dec_key, 
                 unsigned char *enc_global_metadata)                                                                      
 {
     srand(time(NULL));
 
     unsigned char front_link = rand()%256;
     unsigned char back_link = rand()%256;
-
     unsigned char *insert_data;
 
-    List *list = calloc(1, sizeof(List));
-    InitList(list);
-
-    Node *node;
     unsigned short bitmap;
-    int filled_block_count = out->count;
+    int filled_block_count = list->count;
 
     // First time of insertion
     if(index == 0 && filled_block_count == 0)
     {
-        first_insertion(in, out, insert_size, front_link, enc_key, enc_global_metadata);
+        first_insertion(input, list, insert_size, front_link, enc_key, enc_global_metadata);
         return;
     }
 
@@ -539,7 +534,7 @@ void insertion(unsigned char *in, List *out, int index, int insert_size, const v
     if(point == index)  // index is located between two blocks
     {
         insert_data = calloc(insert_size, sizeof(unsigned char));
-        Node *prev_node = seekNode(out, block_num);
+        Node *prev_node = seekNode(list, block_num);
 
         unsigned char tmp[16] = {0, };
 
@@ -549,13 +544,13 @@ void insertion(unsigned char *in, List *out, int index, int insert_size, const v
         AES_encrypt(tmp, &(prev_node->data), enc_key);
 
         // Replace front link of next_node
-        Node *next_node = seekNode(out, block_num);
+        Node *next_node = seekNode(list, block_num);
         AES_decrypt(&(next_node->data), tmp, dec_key);
         tmp[0] = back_link;
         AES_encrypt(tmp, &(prev_node->data), enc_key);
 
         // Copy data we want to insert
-        memcpy(insert_data, in, insert_size);
+        memcpy(insert_data, input, insert_size);
     }
     else                // index is located in the middle of one block
     {
@@ -567,13 +562,13 @@ void insertion(unsigned char *in, List *out, int index, int insert_size, const v
 
         insert_data = calloc(insert_size + origin_size, sizeof(unsigned char));
 
-        node = seekNode(out, block_num);            // block_num + 1 means the block we want to modify
+        Node *node = seekNode(list, block_num);            // block_num + 1 means the block we want to modify
         AES_decrypt(&(node->data), tmp, dec_key);
         front_link = tmp[0];
         back_link = tmp[15];
         memcpy(&bitmap, &tmp[1], 2);
 
-        removeNode(seekNode(out, block_num));
+        removeNode(seekNode(list, block_num));
 
         copy_data(tmp, front_origin, &bitmap);      // Copy data from previous node
 
@@ -593,8 +588,8 @@ void insertion(unsigned char *in, List *out, int index, int insert_size, const v
 
     encrypt(insert_data, list, insert_size, enc_key, front_link, back_link);
 
-    Node *prev_node = seekNode(out, block_num - 1);
-    Node *next_node = seekNode(out, block_num);
+    Node *prev_node = seekNode(list, block_num - 1);
+    Node *next_node = seekNode(list, block_num);
 
     list->head->next->prev = prev_node;
     list->tail->prev->next = next_node;
@@ -612,12 +607,12 @@ void insertion(unsigned char *in, List *out, int index, int insert_size, const v
 
 }
 
-void first_insertion(unsigned char *in, List *out, int insert_size, unsigned char front_link, 
+void first_insertion(unsigned char *input, List *list, int insert_size, unsigned char front_link, 
                         const void *enc_key, unsigned char *global_meta){
     int index;
-    int filled_block_count = out->count;
+    int filled_block_count = list->count;
 
-    encrypt(in, out, insert_size, enc_key, front_link, front_link);
+    encrypt(input, list, insert_size, enc_key, front_link, front_link);
     unsigned char *plain_gmeta = calloc(filled_block_count, sizeof(unsigned char));
     update_metadata(plain_gmeta, insert_size);
     encrypt_global_metadata(plain_gmeta, global_meta, filled_block_count, enc_key);
