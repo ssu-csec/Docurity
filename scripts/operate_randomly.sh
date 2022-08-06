@@ -17,7 +17,8 @@ python3 -c "print('A'*${MAX_SIZE})" >> $Tmpfile
 for ((i=1; i<$MAX_SIZE+1; i++))
 do
 	random_operation=$(($RANDOM % 2))
-	random_index=$(($RANDOM % ($MAX_SIZE / 2)))
+	random_index=$(($RANDOM % ($MAX_SIZE / 50)+1))
+	echo $random_operation
 
 	if [ $random_operation -eq 1 ]
 	then
