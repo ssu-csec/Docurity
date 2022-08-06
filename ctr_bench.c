@@ -34,7 +34,6 @@ int main()
     clock_t start, end;
     double cpu_time_used;
 
-
     unsigned int last_num = 0;
     while(1)
     {
@@ -51,7 +50,7 @@ int main()
             ctr_insert(input, cipherText, ivec, index, &last_num, strlen(input), enc_key);
             end = clock();
             cpu_time_used = ((double) (end - start)) / CLOCKS_PER_SEC;
-            printf("%lf\n", cpu_time_used)
+            printf("%f\n", cpu_time_used);
         }
         else if(strncmp(inst, "Delete", 6) == 0)
         {
@@ -61,7 +60,7 @@ int main()
             ctr_delete(cipherText, ivec, index, length, &last_num, enc_key);
             end = clock();
             cpu_time_used = ((double) (end - start)) / CLOCKS_PER_SEC;
-            printf("%lf\n", cpu_time_used)
+            printf("%f\n", cpu_time_used);
         } 
     }
 
