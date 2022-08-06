@@ -27,16 +27,16 @@ void decrypt(List *in, unsigned char *out, const void *dec_key);
 void deletion(List *out, int index, int del_len, const void *enc_key, const void *dec_key, 
                 unsigned char *global_meta);
 
-void case1(List *out, unsigned char front_link, int front_block_num, int back_block_num,
+void case1(List *out, int del_len, unsigned char front_link, int front_block_num, int back_block_num,
             const void *enc_key, const void *dec_key, unsigned char *plain_gmeta);
 
-void case2(List *out, int front_block_num, int back_block_num,
+void case2(List *out, int del_len, int front_block_num, int back_block_num,
             const void *enc_key, const void *dec_key, unsigned char *plain_gmeta);
 
-void case3(List *out, int front_block_num, int back_block_num,
+void case3(List *out, int del_len, int front_block_num, int back_block_num,
             const void *enc_key, const void *dec_key, unsigned char *plain_gmeta);
 
-void case4(List *out, int index, int front_block_num, int back_block_num,
+void case4(List *out, int index, int del_len, int del_len, int front_block_num, int back_block_num,
             const void *enc_key, const void *dec_key, unsigned char *plain_gmeta);
 
 void insertion(unsigned char *in, List *out, int index, int ins_len, const void *enc_key, const void *dec_key, 
