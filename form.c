@@ -506,7 +506,7 @@ void case4(List *out, int index, int size, int front_block_num, int back_block_n
     insert_global(plain_gmeta, add_global, front_block_num);
 }
 
-void insertion(unsigned char *input, List *list, int index, int insert_size, const void *enc_key, const void *dec_key, 
+void insertion(List *list, unsigned char *input, int index, int insert_size, const void *enc_key, const void *dec_key, 
                 unsigned char *enc_global_metadata)                                                                      
 {
     srand(time(NULL));
@@ -521,7 +521,7 @@ void insertion(unsigned char *input, List *list, int index, int insert_size, con
     // First time of insertion
     if(index == 0 && filled_block_count == 0)
     {
-        first_insertion(input, list, insert_size, front_link, enc_key, enc_global_metadata);
+        first_insertion(list, input, insert_size, front_link, enc_key, enc_global_metadata);
         return;
     }
 
@@ -578,7 +578,7 @@ void insertion(unsigned char *input, List *list, int index, int insert_size, con
         unsigned char *back_origin = insert_data + insert_size + front_origin_size;
 
         memcpy(insert_data, front_origin, front_origin_size);
-        memcpy(insert_position, in, insert_size);
+        memcpy(insert_position, input, insert_size);
         memcpy(back_origin, front_origin + front_origin_size, back_origin_size);
 
         insert_size += origin_size;
@@ -607,7 +607,7 @@ void insertion(unsigned char *input, List *list, int index, int insert_size, con
 
 }
 
-void first_insertion(unsigned char *input, List *list, int insert_size, unsigned char front_link, 
+void first_insertion(List *list, unsigned char *input, int insert_size, unsigned char front_link, 
                         const void *enc_key, unsigned char *global_meta){
     int index;
     int filled_block_count = list->count;
