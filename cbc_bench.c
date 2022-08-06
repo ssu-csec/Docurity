@@ -50,6 +50,7 @@ int main()
             cbc_insert(input, cipherText, ivec, index, strlen(input), enc_key, dec_key);
             end = clock();
             cpu_time_used = ((double) (end - start)) / CLOCKS_PER_SEC;
+            printf("%f\n", cpu_time_used);
         }
         else if(strncmp(inst, "Delete", 6) == 0)
         {
@@ -59,6 +60,7 @@ int main()
             cbc_delete(cipherText, ivec, index, length, enc_key, dec_key);
             end = clock();
             cpu_time_used = ((double) (end - start)) / CLOCKS_PER_SEC;
+            printf("%f\n", cpu_time_used);
         } 
     }
 
