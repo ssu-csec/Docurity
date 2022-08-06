@@ -224,27 +224,35 @@ void decrypt(List *in, unsigned char *out, const void *dec_key)
 
         if(index != 0 && link_front != link_back)
         {
-            printf("front: %x / back: %x => link unmatch! Something is wrong! %d\n", link_front, link_back, count);
-            return;
-        }
-
-        link_back = tmp[15];
-
-        memcpy(&bitmap, &tmp[1], 2);
-        index = 0;
-
-        for (int n = DATA_START; n < AES_BLOCK_SIZE - LINK_LENGTH; ++n)
-        {
-            if((bitmap & BITMAP_SEED) != 0)
+            printf("front: %x / back: %x => link unmatch! %d block is wrong! \n", link_front, link_back, count);
+            for(int i = 0; i < AES_BLOCK_SIZE; i ++)
             {
-                out[index] = tmp[n];
-                index++;
-                bitmap = bitmap << 1;
+                out[i] = " ";
             }
+            out += AES_BLOCK_SIZE;
+ 
         }
+        else
+        {
+            link_back = tmp[15];
 
-        out += index;
+            memcpy(&bitmap, &tmp[1], 2);
+            index = 0;
+
+            for (int n = DATA_START; n < AES_BLOCK_SIZE - LINK_LENGTH; ++n)
+            {
+                if((bitmap & BITMAP_SEED) != 0)
+                {
+                    out[index] = tmp[n];
+                    index++;
+                    bitmap = bitmap << 1;
+                }
+            }
+            out += index;
+        }
     }
+    
+    return;
 }
 
 void deletion(List *out, int index, int del_len, const void *enc_key, const void *dec_key, 
@@ -288,7 +296,7 @@ void deletion(List *out, int index, int del_len, const void *enc_key, const void
     int check2 = 0;
     int back_block_num = 0;
 
-    while(check2 < index + del_len)
+    while(check2 <= index + del_len)
     {
         check2 += (int)plain_gmeta[back_block_num];
         back_block_num++;
