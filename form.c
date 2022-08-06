@@ -183,16 +183,18 @@ void encrypt(const unsigned char *in, List *out, size_t len, const void *enc_key
     *meta = 0;
     tmp[0] = link_front;
 
-    for (n = DATA_START; n < (AES_BLOCK_SIZE - LINK_LENGTH) && n < len + DATA_START; ++n)
+    for (n = DATA_START; n < (AES_BLOCK_SIZE - LINK_LENGTH); ++n)
     {
-        tmp[n] = in[n - DATA_START];
+        if (n < len + DATA_START){
+            tmp[n] = in[n - DATA_START];
 
-        *meta = *meta >> 1;
-        *meta = *meta | (unsigned short)BITMAP_SEED;
+            *meta = *meta >> 1;
+            *meta = *meta | (unsigned short)BITMAP_SEED;
+        }
+        else{
+            tmp[n] = 0;
+        }
     }
-
-    for (; n < (AES_BLOCK_SIZE - DATA_START); ++n)
-        tmp[n] = 0;
 
     tmp[15] = back_ivec;
 
