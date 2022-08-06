@@ -42,6 +42,10 @@ void case4(List *out, int index, int del_len, int front_block_num, int back_bloc
 void insertion(unsigned char *in, List *out, int index, int ins_len, const void *enc_key, const void *dec_key, 
                 unsigned char *global_meta);
 
+void first_insertion(unsigned char *in, List *out, int insert_length, const void *enc_key, unsigned char *global_meta);
+
+void update_metadata(unsigned char *global_metadata, int insert_size);
+
 void free_node_safely(Node *prev_node, Node *next_node);
 
 void packing_data(PACKET *packet, unsigned char *msg);
