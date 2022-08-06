@@ -17,10 +17,10 @@ void insert_global(unsigned char *in, unsigned char *insert, int index);
 
 void delete_global(unsigned char *in, int index, int length);
 
-void encrypt(const unsigned char *in, List *out, size_t len, const void *enc_key, 
+void encrypt(List *dst, const unsigned char *src, size_t len, const void *enc_key, 
                            unsigned char front_ivec, unsigned char back_ivec);
 
-void decrypt(List *in, unsigned char *out, const void *dec_key);
+void decrypt(unsigned char *dst, List *src, const void *dec_key);
 
 void deletion(List *out, int index, int del_len, const void *enc_key, const void *dec_key, 
                 unsigned char *global_meta);
@@ -40,9 +40,12 @@ void case4(List *out, int index, int del_len, int front_block_num, int back_bloc
 void insertion(unsigned char *in, List *out, int index, int ins_len, const void *enc_key, const void *dec_key, 
                 unsigned char *global_meta);
 
-void first_insertion(unsigned char *in, List *out, int insert_length, const void *enc_key, unsigned char *global_meta);
+void first_insertion(unsigned char *in, List *out, int insert_length, unsigned char front_link,
+                const void *enc_key, unsigned char *global_meta);
 
 void update_metadata(unsigned char *global_metadata, int insert_size);
+
+int copy_data(unsigned char *dst, unsigned char *src, unsigned short *bitmap);
 
 int get_aes_block_count(int data_size);
 
