@@ -31,34 +31,43 @@ int main()
     unsigned char inst[10] = {0, };
     int index = 0;
 
+    clock_t start, end;
+    double cpu_time_used;
+
+
     unsigned int last_num = 0;
     while(1)
     {
-        printf("Insert or Delete? ");
         scanf("%s", inst);
+
         if(strncmp(inst, "finish", 6) == 0)
             break;
-        printf("input index: ");
         scanf("%d", &index);
         if(strncmp(inst, "Insert", 6) == 0)
         {
-            printf("input data: ");
             scanf("%s", input);
+
+            start = clock();
             ctr_insert(input, cipherText, ivec, index, &last_num, strlen(input), enc_key);
+            end = clock();
+            cpu_time_used = ((double) (end - start)) / CLOCKS_PER_SEC;
+            printf("%lf\n", cpu_time_used)
         }
         else if(strncmp(inst, "Delete", 6) == 0)
         {
             int length = 0;
-            printf("input delete length : ");
             scanf("%d", &length);
+            start = clock();
             ctr_delete(cipherText, ivec, index, length, &last_num, enc_key);
+            end = clock();
+            cpu_time_used = ((double) (end - start)) / CLOCKS_PER_SEC;
+            printf("%lf\n", cpu_time_used)
         } 
     }
 
     unsigned char result[BUFSIZE * 10] = {0, };
     ctr_decrypt(cipherText, result, ivec, &last_num, enc_key);
 
-    printf("decrypted data : %s", result);
 
     return 0;
 }
