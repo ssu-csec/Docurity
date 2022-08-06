@@ -549,7 +549,6 @@ void case4(List *out, int index, int del_len, int front_block_num, int back_bloc
 void insertion(unsigned char *in, List *out, int index, int ins_len, const void *enc_key, const void *dec_key, 
                 unsigned char *global_meta)                                                                      
 {
-	index--;
     srand(time(NULL));
 
     unsigned char front_link = rand()%256;
@@ -564,6 +563,7 @@ void insertion(unsigned char *in, List *out, int index, int ins_len, const void 
     Node *node;
     unsigned short meta;
 
+    // First time of insertion
     if(index == 0 && out->count == 0)
     {
         int cnt = 0;
@@ -581,8 +581,6 @@ void insertion(unsigned char *in, List *out, int index, int ins_len, const void 
         global_encrypt(plain_gmeta, global_meta, out->count, enc_key);
         return;
     }
-
-    index--;
 
     // decrypt global metadata
     int enc_gmeta_len;
@@ -648,6 +646,7 @@ void insertion(unsigned char *in, List *out, int index, int ins_len, const void 
 
     else                                                                // index is located between two blocks
     {
+        insert_data = calloc(ins_len + (int)plain_gmeta[block_num], sizeof(unsigned char));
         Node *prev_node = seekNode(out, block_num);
         unsigned char tmp[16] = {0, };
         AES_decrypt(&(prev_node->data), tmp, dec_key);
@@ -661,8 +660,7 @@ void insertion(unsigned char *in, List *out, int index, int ins_len, const void 
 
         memcpy(insert_data, in, ins_len);
 
-        free(prev_node);
-        free(next_node);
+        free_node_safely(prev_node, next_node);
     }
 
     encrypt(insert_data, list, ins_len, enc_key, front_link, back_link);
@@ -676,8 +674,7 @@ void insertion(unsigned char *in, List *out, int index, int ins_len, const void 
     next_node->prev = list->tail->prev;
     out->count += list->count;
 
-    free(prev_node);
-    free(next_node);
+    free_node_safely(prev_node, next_node);
 
     unsigned char *add_global = calloc(ins_len/12 + 1, sizeof(unsigned char));
 
@@ -698,6 +695,13 @@ void insertion(unsigned char *in, List *out, int index, int ins_len, const void 
     
     global_encrypt(plain_gmeta, global_meta, out->count, enc_key);
 
+}
+
+void free_node_safely(Node *prev_node, Node *next_node){
+    free(prev_node);
+    if(prev_node != next_node){
+        free(next_node);
+    }
 }
 
 void packing_data(PACKET *packet, unsigned char *msg)
