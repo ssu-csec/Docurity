@@ -184,6 +184,8 @@ void encrypt(List *list, const unsigned char *input, size_t size, const void *en
             break;
         }
 
+        memset(data, 0, 16);
+
         link_front = link_back;
         link_back = rand() % 256;
         size -= DATA_SIZE_IN_BLOCK;
@@ -201,7 +203,7 @@ void decrypt(unsigned char *dst, List *list, const void *dec_key)
     bitmap_t bitmap;
     Node *node = list->head;
 
-    for (int count = 0; count <= list->count; count++){
+    for (int count = 0; count < list->count; count++){
         node = node->next;
 
         memcpy(node_data, &(node->data), 16);
@@ -463,9 +465,11 @@ void insertion(List *list, unsigned char *input, int index, int insert_size, con
     if(index == 0 && filled_block_count == 0)
     {
         global_metadata = calloc(filled_block_count, sizeof(unsigned char));
-        encrypt(list, insert_data, insert_size, enc_key, front_link, back_link);
+        encrypt(list, input, insert_size, enc_key, front_link, front_link);
+
         Node *first_node = list->head->next;
         removeNode(list->head); // delete dummy_node
+
         list->head = first_node;
         list->head->prev = NULL;
         list->tail->next = NULL;
