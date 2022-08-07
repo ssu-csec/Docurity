@@ -204,7 +204,6 @@ void decrypt(unsigned char *dst, List *list, const void *dec_key)
     Node *node = list->head;
 
     for (int count = 0; count < list->count; count++){
-        node = node->next;
 
         memcpy(node_data, &(node->data), 16);
         AES_decrypt(node_data, node_data, dec_key);
@@ -231,6 +230,8 @@ void decrypt(unsigned char *dst, List *list, const void *dec_key)
 
             dst += index;
         }
+
+        node = node->next;
     }
 
     return;
@@ -456,7 +457,7 @@ void insertion(List *list, unsigned char *input, int index, int insert_size, con
 
     link_t front_link = rand() % 256;
     link_t back_link = rand() % 256;
-    unsigned char *global_metadata, *insert_data;
+    unsigned char *global_metadata, *new_metadata, *insert_data;
 
     int block_index = 0;
     int filled_block_count = list->count;
@@ -464,7 +465,6 @@ void insertion(List *list, unsigned char *input, int index, int insert_size, con
     // First time of insertion
     if(index == 0 && filled_block_count == 0)
     {
-        global_metadata = calloc(insert_size/12 + 1, sizeof(unsigned char));
         encrypt(list, input, insert_size, enc_key, front_link, front_link);
 
         Node *first_node = list->head->next;
@@ -474,6 +474,8 @@ void insertion(List *list, unsigned char *input, int index, int insert_size, con
         list->tail = list->tail->prev;
         list->head->prev = NULL;
         list->tail->next = NULL;
+
+        new_metadata = calloc(insert_size/12 + 1, sizeof(unsigned char));
     }
     else{
         global_metadata = decrypt_global_metadata(enc_global_metadata, filled_block_count, dec_key);
@@ -544,9 +546,9 @@ void insertion(List *list, unsigned char *input, int index, int insert_size, con
         list->count += tmp_list->count;
 
         free(tmp_list);
-    }
 
-    unsigned char *new_metadata = calloc(insert_size/12 + 1, sizeof(unsigned char));
+        new_metadata = calloc(insert_size/12 + 1, sizeof(unsigned char));
+    }
 
     update_metadata(new_metadata, insert_size);
 
