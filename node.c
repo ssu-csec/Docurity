@@ -50,7 +50,7 @@ void removeNode(Node *this)
 Node *seekNode(List *list, int index)
 {
     Node *seek = list->head;
-    if (index < 0 or index >= list->count){
+    if (index < 0 || index >= list->count){
         return seek;
     }
 
