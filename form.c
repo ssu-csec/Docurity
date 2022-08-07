@@ -490,8 +490,8 @@ void insertion(List *list, unsigned char *input, int index, int insert_size, con
         {
             insert_data = calloc(insert_size, sizeof(unsigned char));
 
-            Node *prev_node = seekNode(list, block_index);
-            Node *next_node = seekNode(list, block_index);
+            Node *prev_node = seekNode(list, block_index-1);
+            Node *next_node = seekNode(list, block_index+1);
 
             replace_link(prev_node, front_link, -1, enc_key, dec_key);
             replace_link(next_node, back_link, 0, enc_key, dec_key);
@@ -539,12 +539,12 @@ void insertion(List *list, unsigned char *input, int index, int insert_size, con
         encrypt(tmp_list, insert_data, insert_size, enc_key, front_link, back_link);
 
         // join tmp_list to list[index]
-        Node *prev_node = seekNode(list, block_index);
+        Node *prev_node = seekNode(list, block_index - 1);
         Node *next_node = seekNode(list, block_index + 1);
         tmp_list->head->next->prev = prev_node;
-        tmp_list->tail->prev->next = next_node;
+        tmp_list->tail->next = next_node;
         prev_node->next = tmp_list->head->next;
-        next_node->prev = tmp_list->tail->prev;
+        next_node->prev = tmp_list->tail;
         list->count += tmp_list->count;
 
         free(tmp_list);
