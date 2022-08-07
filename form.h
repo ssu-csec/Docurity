@@ -2,8 +2,8 @@
 #include <openssl/modes.h>
 #include "packet.h"
 #include "node.h"
-#define LINK_LENGTH 1
-#define METADATA_LENGTH 2
+#define LINK_LENGTH sizeof(link_t)
+#define BITMAP_LENGTH sizeof(bitmap_t)
 #define BITMAP_SEED 2048
 #define LINKLESS_BLOCK_SIZE (AES_BLOCK_SIZE - (2*LINK_LENGTH))
 #define DATA_SIZE_IN_BLOCK  (LINKLESS_BLOCK_SIZE - METADATA_LENGTH)
@@ -11,42 +11,30 @@
 
 void encrypt_global_metadata(const unsigned char *in, unsigned char *out, size_t size, const void *enc_key);
 
-unsigned char *decrypt_global_metadata(const unsigned char *in, size_t size, const void *dec_key);
+unsigned char *decrypt_global_metadata(const unsigned char *enc_global_metadata, size_t size, const void *dec_key);
 
-void insert_global(unsigned char *in, unsigned char *insert, int index);
+void insert_global(unsigned char *global_metadata, unsigned char *metadata, int index);
 
-void delete_global(unsigned char *in, int index, int length);
-
-void encrypt(List *dst, const unsigned char *src, size_t len, const void *enc_key, 
-                           link_t front_ivec, link_t back_ivec);
-
-void decrypt(unsigned char *dst, List *src, const void *dec_key);
-
-void deletion(List *out, int index, int del_len, const void *enc_key, const void *dec_key, 
-                unsigned char *global_meta);
-
-void case1(List *out, int del_len, link_t front_link, int front_block_num, int back_block_num,
-            const void *enc_key, const void *dec_key, unsigned char *plain_gmeta);
-
-void case2(List *out, int del_len, int front_block_num, int back_block_num,
-            const void *enc_key, const void *dec_key, unsigned char *plain_gmeta);
-
-void case3(List *out, int del_len, int front_block_num, int back_block_num,
-            const void *enc_key, const void *dec_key, unsigned char *plain_gmeta);
-
-void case4(List *out, int index, int del_len, int front_block_num, int back_block_num,
-            const void *enc_key, const void *dec_key, unsigned char *plain_gmeta);
-
-void insertion(List *list, unsigned char *input, int index, int ins_len, const void *enc_key, const void *dec_key, 
-                unsigned char *global_meta);
-
-void first_insertion(List *list, unsigned char *input, int insert_length, link_t front_link,
-                const void *enc_key, unsigned char *global_meta);
+void delete_global(unsigned char *global_metadata, int index, int size);
 
 void update_metadata(unsigned char *global_metadata, int insert_size);
 
-void extract_node(Node *node, link_t *front_link, link_t *back_link, bitmap_t *bitmap,
-                    unsigned char *data, const void *dec_key);
+void encrypt(List *list, const unsigned char *input, size_t size, const void *enc_key, 
+                           link_t front_ivec, link_t back_ivec);
+
+void decrypt(unsigned char *dst, List *list, const void *dec_key);
+
+void deletion(List *list, int index, int size, const void *enc_key, const void *dec_key, 
+                unsigned char *enc_global_metadata);
+
+void insertion(List *list, unsigned char *input, int index, int insert_size, const void *enc_key, const void *dec_key, 
+                unsigned char *enc_global_metadata);
+
+void encrypt_block(Node *node, link_t front_link, link_t back_link, bitmap_t bitmap, unsigned char *data,
+                    const void *enc_key);
+
+void decrypt_block(Node *node, link_t *front_link, link_t *back_link, bitmap_t *bitmap, unsigned char *data,
+                    const void *dec_key);
 
 link_t get_link(Node *node, char index, const void *dec_key);
 
@@ -60,7 +48,7 @@ int copy_data(unsigned char *dst, unsigned char *src, bitmap_t *bitmap);
 
 int get_aes_block_count(int data_size);
 
-int find_point(int index, int *block_index, unsigned char *global_metadata);
+int find_block_start(int index, int *block_index, unsigned char *global_metadata);
 
 void free_node_safely(Node *prev_node, Node *next_node);
 

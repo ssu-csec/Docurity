@@ -12,7 +12,7 @@
 void encrypt_global_metadata(const const unsigned char *in, unsigned char *out, size_t size, const void *enc_key)
 {
     srand(time(NULL));
-    int n = 0;
+    int index = 0;
     link_t link_front = rand() % 256;
     link_t link_back = rand() % 256;
     link_t ivec = link_front;
@@ -20,54 +20,48 @@ void encrypt_global_metadata(const const unsigned char *in, unsigned char *out, 
     if(size == 0)
         return;
     
-    while (size > LINKLESS_BLOCK_SIZE) 
-    {
+    while(1){
         out[0] = link_front;
 
-        // Fill data from *in to *out
-        // [{link_front}{data...data}{link_back}]
-        for (n = LINK_LENGTH; n < (AES_BLOCK_SIZE - LINK_LENGTH); ++n){
-            out[n] = in[n - LINK_LENGTH];
+        for (index = LINK_LENGTH; index < (AES_BLOCK_SIZE - LINK_LENGTH); ++index){
+            if (index < size + LINK_LENGTH){
+                out[index] = in[index - LINK_LENGTH];
+            }
+            else{
+                out[index] = 0;
+            }
         }
 
-        out[15] = link_back;
+        if (size > LINKLESS_BLOCK_SIZE){
+            out[15] = link_back;
 
-        AES_encrypt(out, out, enc_key);
+            AES_encrypt(out, out, enc_key);
+        }
+        else{
+            // Handle the last block
+            out[15] = ivec;
+
+            AES_encrypt(out, out, enc_key);
+            break;
+        }
+
+        link_front = link_back;
+        link_back = rand() % 256;
 
         size -= LINKLESS_BLOCK_SIZE;
         in += LINKLESS_BLOCK_SIZE;
         out += AES_BLOCK_SIZE;
-
-        link_front = link_back;
-        link_back = rand() % 256;       
     }
-
-    // Handle the last block
-    out[0] = link_front;
-
-    for (n = LINK_LENGTH; n < (AES_BLOCK_SIZE - LINK_LENGTH) && n < size + (LINK_LENGTH); ++n){
-        out[n] = in[n - (LINK_LENGTH)];
-    }
-
-    for (; n < (AES_BLOCK_SIZE - LINK_LENGTH); ++n){
-        out[n] = 0;
-    }
-
-    out[15] = ivec;
-
-    AES_encrypt(out, out, enc_key);
-
-    return;
 }
 
-unsigned char *decrypt_global_metadata(const unsigned char *origin, size_t size, const void *dec_key)
+unsigned char *decrypt_global_metadata(const unsigned char *enc_global_metadata, size_t size, const void *dec_key)
 {
     unsigned char tmp[AES_BLOCK_SIZE] = {0, };
-    link_t link_front = 0;
-    link_t link_back = 0;
     unsigned char *global_metadata = calloc(size, sizeof(unsigned char));
     int aes_block_count = get_aes_block_count(size);
     int first_check = aes_block_count;
+    link_t link_front = 0;
+    link_t link_back = 0;
 
     if (aes_block_count % AES_BLOCK_SIZE != 0)
     {
@@ -76,7 +70,7 @@ unsigned char *decrypt_global_metadata(const unsigned char *origin, size_t size,
     }
 
     while (aes_block_count) {
-        AES_decrypt(origin, tmp, dec_key);
+        AES_decrypt(enc_global_metadata, tmp, dec_key);
 
         link_front = tmp[0];
 
@@ -93,123 +87,121 @@ unsigned char *decrypt_global_metadata(const unsigned char *origin, size_t size,
         }
 
         aes_block_count -= AES_BLOCK_SIZE;
-        origin += AES_BLOCK_SIZE;
+        enc_global_metadata += AES_BLOCK_SIZE;
         global_metadata += LINKLESS_BLOCK_SIZE;
     }
 
     return global_metadata;
 }
 
-void insert_global(unsigned char *in, unsigned char *insert, int index)
+void insert_global(unsigned char *global_metadata, unsigned char *metadata, int index)
 {
-    unsigned char *insert_point = in + index;
-    unsigned char *back_chunk_start = insert_point+strlen(insert);
-    int back_chunk_size = strlen(in) - index;
-    unsigned char *temp = calloc(back_chunk_size, sizeof(unsigned char));
+    int metadata_size = strlen(metadata);
+    int next_data_size = strlen(global_metadata) - index;
+    int temp_size = next_data_size + metadata_size;
+    unsigned char *temp = calloc(temp_size, sizeof(unsigned char));
  
-    memcpy(temp, insert_point, back_chunk_size);         // save temporary for back chunk
-    memcpy(insert_point, insert, strlen(insert));        // insert global
-    memcpy(back_chunk_start, temp, back_chunk_size);        // restore back chunk
+    memcpy(temp, metadata, metadata_size);
+    memcpy(temp + metadata_size, global_metadata + index, next_data_size);
+
+    memcpy(global_metadata + index, temp, temp_size);       // Overwrite origin global metadata
 
     free(temp);
 }
 
-void delete_global(unsigned char *in, int index, int length)
+void delete_global(unsigned char *global_metadata, int index, int size)
 {
-    index--;
+    int global_metadata_size = strlen(global_metadata);
+    int delete_position = global_metadata + index;
+    int next_data_start = delete_position + size;
+    int next_data_size = global_metadata_size - (index + size);
 
-    int delete_position = in + index;
-    int back_chunk_start = delete_position + length;
-    int back_chunk_size = strlen(in) - index - length;
-    unsigned char *temp = calloc(back_chunk_size, sizeof(unsigned char));
-
-    memcpy(temp, back_chunk_start, back_chunk_size);
-    memcpy(delete_position, temp, back_chunk_size);
-
-    free(temp);
+    memcpy(delete_position, next_data_start, next_data_size);
+    memset(global_metadata + global_metadata_size, 0, size);      // clear moved data
 }
 
-void encrypt(List *dst, const unsigned char *src, size_t len, const void *enc_key,
+void update_metadata(unsigned char *global_metadata, int insert_size){
+    for (int index = 0; insert_size > 0; index++){
+        if (insert_size > DATA_SIZE_IN_BLOCK){
+            global_metadata[index] = DATA_SIZE_IN_BLOCK;
+        }
+        else{
+            global_metadata[index] = insert_size;
+        }
+
+        insert_size -= DATA_SIZE_IN_BLOCK;
+    }
+}
+
+
+void encrypt(List *list, const unsigned char *input, size_t size, const void *enc_key,
                 link_t front_ivec, link_t back_ivec)
 {
     srand(time(NULL));
-    int n = 0;
+    int index = 0;
     unsigned char data[16] = {0. };
     link_t link_front = front_ivec;
     link_t link_back = rand() % 256;
-    bitmap_t *bitmap;
-    bitmap = &data[1];
+    bitmap_t *bitmap = &data[1];
 
-    if(len == 0)
+    if (size == 0)
         return;
     
-    while (len > DATA_SIZE_IN_BLOCK) 
-    {
+    while (1){
         *bitmap = 0;
         data[0] = link_front;
 
-        for (n = DATA_START; n < (AES_BLOCK_SIZE - LINK_LENGTH); ++n)
+        for (index = DATA_START; index < (AES_BLOCK_SIZE - LINK_LENGTH); ++index)
         {
-            data[n] = src[n - DATA_START];       // Insert data, data[] start at DATA_START and src[] start at 0
+            if (index < size + DATA_START){
+                data[index] = input[index - DATA_START];       // Insert data, data[] start at DATA_START and input[] start at 0
 
-            // Record metadata (Bitmap)
-            *bitmap = *bitmap >> 1;
-            *bitmap = *bitmap | (bitmap_t) BITMAP_SEED;
+                // Record metadata (Bitmap)
+                *bitmap = *bitmap >> 1;
+                *bitmap = *bitmap | (bitmap_t) BITMAP_SEED;
+            }
+            else{
+                data[index] = 0;
+            }
         }
 
-        data[15] = link_back;
+        if (size > DATA_SIZE_IN_BLOCK){
+            data[15] = link_back;
 
-        AES_encrypt(data, data, enc_key);
+            AES_encrypt(data, data, enc_key);
 
-        len -= DATA_SIZE_IN_BLOCK;
-        src += DATA_SIZE_IN_BLOCK;
+            list->count += 1;
+            insertNode(createNode(data), list->tail);
+        }
+        else{
+            // Handle the last block
+            data[15] = back_ivec;
 
-        dst->count += 1;
-        insertNode(createNode(data), dst->tail);
+            AES_encrypt(data, data, enc_key);
+
+            list->count += 1;
+            insertNode(createNode(data), list->tail);
+            break;
+        }
 
         link_front = link_back;
         link_back = rand() % 256;
-        
+        size -= DATA_SIZE_IN_BLOCK;
+        input += DATA_SIZE_IN_BLOCK;
     }
-
-    // Handle the last block
-    *bitmap = 0;
-    data[0] = link_front;
-
-    for (n = DATA_START; n < (AES_BLOCK_SIZE - LINK_LENGTH); ++n)
-    {
-        if (n < len + DATA_START){
-            data[n] = src[n - DATA_START];
-
-            *bitmap = *bitmap >> 1;  
-            *bitmap = *bitmap | (bitmap_t) BITMAP_SEED;
-        }
-        else{
-            data[n] = 0;
-        }
-    }
-
-    data[15] = back_ivec;
-
-    AES_encrypt(data, data, enc_key);
-    dst->count += 1;
-
-    insertNode(createNode(data), dst->tail);
-
-    return;
 }
 
-void decrypt(unsigned char *dst, List *src, const void *dec_key)
+void decrypt(unsigned char *dst, List *list, const void *dec_key)
 {
+    char is_valid_block;
     unsigned char node_data[AES_BLOCK_SIZE] = {0, };
+    int index = 0;
     link_t link_front = 0;
     link_t link_back = 0;
     bitmap_t bitmap;
-    int index = 0;
+    Node *node = list->head;
 
-    Node *node = src->head;
-
-    for (int count = src->count; count > 0; count--){
+    for (int count = 0; count <= list->count; count++){
         node = node->next;
 
         memcpy(node_data, &(node->data), 16);
@@ -217,7 +209,9 @@ void decrypt(unsigned char *dst, List *src, const void *dec_key)
 
         link_front = node_data[0];
 
-        if(index != 0 && link_front != link_back)
+        is_valid_block = index > 0 && link_front != link_back;
+
+        if(is_valid_block)
         {
             printf("front: %x / back: %x => link unmatch! %d block is wrong! \n", link_front, link_back, count);
             for(int i = 0; i < AES_BLOCK_SIZE; i++)
@@ -240,264 +234,218 @@ void decrypt(unsigned char *dst, List *src, const void *dec_key)
     return;
 }
 
-void deletion(List *out, int index, int size, const void *enc_key, const void *dec_key, 
+void deletion(List *list, int index, int size, const void *enc_key, const void *dec_key, 
                 unsigned char *enc_global_metadata)                                          
 {
     srand(time(NULL));
     unsigned char msg[BUFSIZE] = {0, };
+    unsigned char tmp[16] = {0, };
+    int deleted_blocks = 0;
+    int delete_start = index;
+    int delete_end = index + size;
+    int bound = index + size + 1;
     link_t front_link = rand()%256;
     link_t back_link = rand()%256;
     bitmap_t bitmap = 0;
 
-    unsigned char *global_metadata = decrypt_global_metadata(enc_global_metadata, out->count, dec_key);
+    unsigned char *global_metadata = decrypt_global_metadata(enc_global_metadata, list->count, dec_key);
 
-    int front_block_num = 0;
-    int start_point = find_point(index, &front_block_num, global_metadata);
+    // first block to be delete
+    int first_block_num = 0;
+    int first_block_start = find_block_start(delete_start, &first_block_num, global_metadata);
 
-    int back_block_num = 0;
-    int end_point = find_point(index + size, &back_block_num, global_metadata);
+    // last block to be delete
+    int last_block_num = 0;
+    int last_block_start = find_block_start(delete_end, &last_block_num, global_metadata);
 
-    if(start_point == index && end_point == index + size)
+    // last block to be delete
+    int bound_block_num = 0;
+    find_block_start(bound, &bound_block_num, global_metadata);
+
+    char delete_from_block_start = first_block_start == delete_start ? 1 : 0:
+    char delete_to_block_end = last_block_num != bound_block_num ? 1 : 0:
+
+    if(delete_from_block_start && delete_to_block_end)     // delete entire blocks
     {
-        case1(out, size, front_link, front_block_num, back_block_num, enc_key, dec_key, global_metadata);
-    }
-    else if(start_point == index && end_point != index + size)
-    {
-        case2(out, size, front_block_num, back_block_num, enc_key, dec_key, global_metadata);
-    }
-    else if(start_point != index && end_point == index + size)
-    {
-        case3(out, size, front_block_num, back_block_num, enc_key, dec_key, global_metadata);
-    }
-    else
-    {
-        case4(out, index, size, front_block_num, back_block_num, enc_key, dec_key, global_metadata);
-    }
+        deleted_blocks = bound_block_num - first_block_num;
 
-    encrypt_global_metadata(global_metadata, enc_global_metadata, out->count, enc_key);
-}
+        if(first_block_num > 0){
+            Node *front_block = seekNode(list, first_block_num - 1);
+            Node *bound_block = seekNode(list, bound_block_num);
 
-void case1(List *out, int size, link_t front_link, int front_block_num, int back_block_num,
-            const void *enc_key, const void *dec_key, unsigned char *plain_gmeta){
-    unsigned char tmp[16] = {0, };
+            replace_link(front_block, front_link, -1, enc_key, dec_key);
+            replace_link(bound_block, front_link, 0, enc_key, dec_key);
 
-    Node *front_node = seekNode(out, front_block_num);
-    Node *back_node = seekNode(out, back_block_num - 1);
-
-
-    replace_link(front_node, front_link, -1, enc_key, dec_key);
-    replace_link(back_node, front_link, 0, enc_key, dec_key);
-
-    out->count -= back_block_num - front_block_num;
-    delete_global(plain_gmeta, front_block_num, back_block_num - front_block_num);
-}
-
-void case2(List *out, int size, int front_block_num, int back_block_num,
-            const void *enc_key, const void *dec_key, unsigned char *plain_gmeta){
-    unsigned char tmp[16] = {0, };
-
-    bitmap_t bitmap = 0;
-    int cnt = 0, front_link, back_link;
-    int index = front_block_num;
-
-    Node *front_node = seekNode(out, front_block_num);
-    Node *back_node = seekNode(out, back_block_num);
-
-    front_link = get_link(front_node, 0, dec_key);
-    back_link = get_link(back_node, -1, dec_key);
-
-    memcpy(&bitmap, &tmp[1], 2);
-
-    while(size > 0)
-    {
-        size -= plain_gmeta[index];
-        index++;
-    }
-
-    index--;
-    size += plain_gmeta[index];
-  
-    bitmap_t check_bitmap = (bitmap_t) BITMAP_SEED;
-    for(int i = DATA_START; i < AES_BLOCK_SIZE; i++)
-    {
-        if((bitmap & check_bitmap) != 0 && size > 0)
-        {
-            tmp[i] = 0;
-            bitmap = bitmap ^ check_bitmap;
-            cnt++;
-            size--;
+            removeNode(seekNode(list, first_block_num));
+            removeNode(seekNode(list, last_block_num));
         }
-        check_bitmap = check_bitmap >> 1;
-    }
+        else{   // from head of list to a block deleted
+            Node *new_head_block = seekNode(list, bound_block_num);
+            Node *last_block = list->tail;
 
-    memcpy(&tmp[1], &bitmap, 2);
+            removeNode(seekNode(list, first_block_num));
+            removeNode(seekNode(list, last_block_num));
 
-    tmp[0] = front_link;
-    tmp[15] = back_link;
-    plain_gmeta[back_block_num - 1] = (unsigned char) cnt;
-    AES_encrypt(tmp, tmp, 16);
+            link_t ivec = get_link(last_block, -1, dec_key);
+            replace_link(new_head_block, ivec, 0, enc_key, dec_key);
 
-    for(int i = front_block_num; i < back_block_num; i++)
-    {
-        removeNode(seekNode(out, front_block_num));
-    }
-
-    Node *new_node = calloc(1, sizeof(Node));
-    memcpy(new_node->data, tmp, 16);
-
-    insertNode(new_node, seekNode(out, front_block_num));
-
-    delete_global(plain_gmeta, front_block_num, back_block_num - front_block_num - 2);
-}
-
-void case3(List *out, int size, int front_block_num, int back_block_num,
-            const void *enc_key, const void *dec_key, unsigned char *plain_gmeta){
-    unsigned char tmp[16] = {0, };
-    bitmap_t bitmap = 0;
-    int cnt = 0, front_link, back_link;
-    int index = back_block_num;
-
-    Node *front_node = seekNode(out, front_block_num);
-    Node *back_node = seekNode(out, back_block_num - 1);
-
-    front_link = get_link(front_node, 0, dec_key);
-    back_link = get_link(back_node, -1, dec_key);
-
-    memcpy(&bitmap, &tmp[1], 2);
-
-    while(size > 0)
-    {
-        size -= plain_gmeta[index];
-        index--;
-    }
-
-    index++;
-    size += plain_gmeta[index];
-  
-    bitmap_t check_bitmap = (bitmap_t) 1;
-
-    for(int i = AES_BLOCK_SIZE - 1; i >= DATA_START; i--)
-    {
-        if((bitmap & check_bitmap) != 0 && size > 0)
-        {
-            tmp[i] = 0;
-            bitmap = bitmap ^ check_bitmap;
-        }
-        check_bitmap = check_bitmap << 1;
-    }
-
-    memcpy(&tmp[1], &bitmap, 2);
-
-    tmp[0] = front_link;
-    tmp[15] = back_link;
-
-    plain_gmeta[front_block_num] = (char)cnt;
-    AES_encrypt(tmp, tmp, 16);
-
-    for(int i = front_block_num; i < back_block_num; i++)
-    {
-        removeNode(seekNode(out, front_block_num));
-    }
-
-    Node *new_node = calloc(1, sizeof(Node));
-    memcpy(new_node->data, tmp, 16);
-    insertNode(new_node, seekNode(out, front_block_num));
-
-    delete_global(plain_gmeta, front_block_num + 1, back_block_num - front_block_num - 1);
-}
-
-void case4(List *out, int index, int size, int front_block_num, int back_block_num,
-            const void *enc_key, const void *dec_key, unsigned char *plain_gmeta){
-    unsigned char tmp[16] = {0, };
-    unsigned char *data;
-    bitmap_t bitmap = 0;
-    int front_len = 0;
-    int back_len = 0;
-    int cnt = 0, front_link, back_link;
-
-    Node *front_node = seekNode(out, front_block_num);
-    Node *back_node = seekNode(out, back_block_num - 1);
-
-    front_link = get_link(front_node, 0, dec_key);
-
-    memcpy(&bitmap, &tmp[1], 2);
-
-    for(int i = 0; i < front_block_num; i++)
-    {
-        front_len += (int)plain_gmeta[i];
-    }
-    front_len = index - front_len;
-
-    for(int i = 0; i < back_block_num; i++)
-    {
-        back_len += (int)plain_gmeta[i];
-    }
-    back_len = back_len - (index + size);
-
-    data = calloc(front_len + back_len, sizeof(unsigned char));
-    bitmap_t check_bitmap = (bitmap_t) BITMAP_SEED;
-
-    int data_index = 0;
-
-    while(data_index < 12 && cnt < front_len)
-    {
-        if(bitmap & check_bitmap != 0)
-        {
-            data[cnt] = tmp[data_index + DATA_START];
-            cnt++;
+            list->head = new_head_block;
+            list->head->prev = list->tail;
+            list->tail->next = new_head_block;
         }
 
-        check_bitmap = check_bitmap >> 1;
-        data_index++;
-
+        list->count -= deleted_blocks;
+        delete_global(global_metadata, first_block_num, deleted_blocks);
     }
-
-    back_link = get_link(back_node, -1, dec_key);
-
-    memcpy(&bitmap, &tmp[1], 2);
-  
-    check_bitmap = (bitmap_t) 1;
-    data_index = 11;
-    cnt = front_len + back_len -1;
-    while(data_index >= 0 && cnt >= front_len)
+    else if(delete_from_block_start && !delete_to_block_end)   // delete from a block to a part of the other block
     {
-        if(bitmap & check_bitmap != 0)
-        {
-            data[cnt] = tmp[data_index + DATA_START];
-            cnt--;
+        int delete_count = 0;
+        int delete_size_in_block = size - last_block_start;
+        deleted_blocks = last_block_num - first_block_num - 1;  // save last block
+
+        Node *front_block = seekNode(list, front_block_num - 1);
+        Node *back_block = seekNode(list, back_block_num);
+
+        unsigned char *block_data = calloc(DATA_SIZE_IN_BLOCK, sizeof(unsigned char));
+
+        front_link = get_link(front_block, -1, dec_key);
+        decrypt_block(back_block, NULL, &back_link, &bitmap, block_data, dec_key);
+
+        bitmap_t check_bitmap = (bitmap_t) BITMAP_SEED;
+        for (int data_index = 0; data_index < DATA_SIZE_IN_BLOCK; data_index++){
+            if(delete_count > delete_size_in_block){
+                break;
+            }
+
+            if((bitmap & check_bitmap) != 0){
+                block_data[data_index] = 0;
+                bitmap = bitmap ^ check_bitmap;
+                delete_count++;
+            }
+
+            check_bitmap = check_bitmap >> 1;
         }
 
-        check_bitmap = check_bitmap << 1;
-        data_index--;
-    }
+        replace_link(front_block, back_link, -1, enc_key, dec_key);
+        replace_link(back_block, front_link, 0, enc_key, dec_key);
 
-    for(cnt = front_block_num; cnt < back_block_num; cnt++)
+        Node *new_node = calloc(1, sizeof(Node));
+
+        encrypt_block(new_node, front_link, back_link, bitmap, block_data, enc_key);
+
+        for(int block_num = front_block_num; block_num < back_block_num; block_num++)
+        {
+            removeNode(seekNode(list, block_num));
+        }
+
+        insertNode(new_node, seekNode(list, front_block_num));
+
+        list->count -= deleted_blocks
+        delete_global(global_metadata, front_block_num, deleted_blocks);
+    }
+    else if(!delete_from_block_start && delete_to_block_end)   // delete from a part of a block to the other block
     {
-        removeNode(seekNode(out, front_block_num));
+        int delete_count = 0;
+        int delete_start_in_block = delete_start - first_block_start;
+        deleted_blocks = last_block_num - first_block_num;  // save last block
+
+        Node *front_block = seekNode(list, front_block_num);
+        Node *bound_block = seekNode(list, bound_block_num);
+
+        unsigned char *block_data = calloc(DATA_SIZE_IN_BLOCK, sizeof(unsigned char));
+
+        front_link = get_link(bound_block, 0, dec_key);
+        decrypt_block(front_block, NULL, &back_link, &bitmap, block_data, dec_key);
+
+        bitmap_t check_bitmap = (bitmap_t) BITMAP_SEED >> delete_start_in_block;
+        for (int data_index = delete_start_in_block; data_index < DATA_SIZE_IN_BLOCK; data_index++){
+            if((bitmap & check_bitmap) != 0){
+                block_data[data_index] = 0;
+                bitmap = bitmap ^ check_bitmap;
+                delete_count++;
+            }
+            check_bitmap = check_bitmap >> 1;
+        }
+
+        replace_link(front_block, back_link, -1, enc_key, dec_key);
+        replace_link(bound_block, front_link, 0, enc_key, dec_key);
+
+        Node *new_node = calloc(1, sizeof(Node));
+
+        encrypt_block(new_node, front_link, back_link, bitmap, block_data, enc_key);
+
+        for(int block_num = front_block_num + 1; block_num < bound_block_num; block_num++)
+        {
+            removeNode(seekNode(list, block_num));
+        }
+
+        insertNode(new_node, seekNode(list, front_block_num));
+
+        list->count -= deleted_blocks
+        global_metadata[front_block_num] -= delete_count;
+        delete_global(global_metadata, front_block_num + 1, deleted_blocks);
     }
-
-    List *new_list = calloc(1, sizeof(List));
-    InitList(new_list);
-    encrypt(new_list, data, front_len + back_len, enc_key, front_link, back_link);
-
-    unsigned char *add_global = calloc((front_len + back_len)/12 + 1, sizeof(unsigned char));
-
-    int len = front_len + back_len;
-    int i = 0;
-
-    while(len > 0)
+    else                           // delete from a part of a block to a part of the other block
     {
-        if(len > 12)
-            add_global[i] = (unsigned char)12;
+        int delete_count = 0;
+        int delete_start_in_block = delete_start - first_block_start;
+        int delete_size_in_block = size - last_block_start;
+        deleted_blocks = last_block_num - first_block_num - 2;  // save first and last block
+        link_t old_front_link, old_back_link;
+        bitmap_t front_bitmap, back_bitmap, check_bitmap;
 
-        else
-            add_global[i] = (unsigned char)len;
-        len -= 12;
+        Node *front_block = seekNode(list, front_block_num - 1);
+        Node *back_block = seekNode(list, back_block_num);
+
+        unsigned char *front_block_data = calloc(DATA_SIZE_IN_BLOCK, sizeof(unsigned char));
+        unsigned char *back_block_data = calloc(DATA_SIZE_IN_BLOCK, sizeof(unsigned char));
+
+        decrypt_block(front_block, &old_front_link, &back_link, &front_bitmap, front_block_data, dec_key);
+        decrypt_block(back_block, &front_link, &old_back_link, &back_bitmap, back_block_data, dec_key);
+
+        check_bitmap = (bitmap_t) BITMAP_SEED >> delete_start_in_block;
+        for (int data_index = delete_start_in_block; data_index < DATA_SIZE_IN_BLOCK; data_index++){
+            if((front_bitmap & check_bitmap) != 0){
+                block_data[data_index] = 0;
+                front_bitmap = front_bitmap ^ check_bitmap;
+                delete_count++;
+            }
+            check_bitmap = check_bitmap >> 1;
+        }
+
+        global_metadata[front_block_num] -= delete_count;
+        delete_count = 0;
+
+        check_bitmap = (bitmap_t) BITMAP_SEED;
+        for (int data_index = 0; data_index < DATA_SIZE_IN_BLOCK; data_index++){
+            if(delete_count > delete_size_in_block){
+                break;
+            }
+
+            if((back_bitmap & check_bitmap) != 0){
+                block_data[data_index] = 0;
+                back_bitmap = back_bitmap ^ check_bitmap;
+                delete_count++;
+            }
+
+            check_bitmap = check_bitmap >> 1;
+        }
+
+        encrypt_block(front_block, old_front_link, back_link, front_bitmap, front_block_data, enc_key);
+        encrypt_block(back_block, front_link, old_back_link, back_bitmap, back_block_data, enc_key);
+
+        for(int block_num = front_block_num + 1; block_num < back_block_num; block_num++)
+        {
+            removeNode(seekNode(list, block_num));
+        }
+
+        list->count -= deleted_blocks
+        delete_global(global_metadata, front_block_num, deleted_blocks);
     }
 
-    delete_global(plain_gmeta, front_block_num, back_block_num - front_block_num);
-    insert_global(plain_gmeta, add_global, front_block_num);
+    encrypt_global_metadata(global_metadata, enc_global_metadata, list->count, enc_key);
 }
+
 
 void insertion(List *list, unsigned char *input, int index, int insert_size, const void *enc_key, const void *dec_key, 
                 unsigned char *enc_global_metadata)                                                                      
@@ -506,71 +454,87 @@ void insertion(List *list, unsigned char *input, int index, int insert_size, con
 
     link_t front_link = rand() % 256;
     link_t back_link = rand() % 256;
-    unsigned char *insert_data;
+    unsigned char *global_metadata, *insert_data;
 
     int filled_block_count = list->count;
 
     // First time of insertion
     if(index == 0 && filled_block_count == 0)
     {
-        first_insertion(list, input, insert_size, front_link, enc_key, enc_global_metadata);
-        return;
+        global_metadata = calloc(filled_block_count, sizeof(unsigned char));
+    }
+    else{
+        global_metadata = decrypt_global_metadata(enc_global_metadata, filled_block_count, dec_key);
+        memset(enc_global_metadata, 0, BUFSIZE);        // clear original global metadata
+
+        int block_index = 0;
+        int start_point = find_block_start(index, &block_index, global_metadata);
+        char is_block_start = start_point == index ? 1 : 0;
+
+        if(is_block_start)  // index is located between two blocks
+        {
+            insert_data = calloc(insert_size, sizeof(unsigned char));
+
+            Node *prev_node = seekNode(list, block_index);
+            Node *next_node = seekNode(list, block_index);
+
+            replace_link(prev_node, front_link, -1, enc_key, dec_key);
+            replace_link(next_node, back_link, 0, enc_key, dec_key);
+
+            // Copy data we want to insert
+            memcpy(insert_data, input, insert_size);
+        }
+        else                // index is located in the middle of one block
+        {
+            // 1. get block
+            // 2. divide block at index
+            // 3. fill data into insert_data && bitmap
+
+            block_index++;
+
+            unsigned char *block_data, *insert_point;
+            int block_data_size = (int)global_metadata[block_index];
+            int block_front_size = index - start_point;
+            int block_back_size = block_data_size - block_front_size;
+
+            insert_data = calloc(insert_size + block_data_size, sizeof(unsigned char));
+
+            Node *block = seekNode(list, block_index);
+
+            block_data = calloc(DATA_SIZE_IN_BLOCK, sizeof(unsigned char));
+            decrypt_block(block, &front_link, &back_link, NULL, block_data, dec_key);
+
+            removeNode(block);
+
+            insert_point = insert_data + block_front_size;
+
+            memcpy(insert_data, block_data, block_front_size);
+            memcpy(insert_point, input, insert_size);
+            memcpy(insert_point + insert_size, block_data + block_front_size, block_back_size);
+
+            free(block_data);
+            delete_global(global_metadata, block_index, 1);
+            
+            insert_size += block_data_size;
+        }
     }
 
-    unsigned char *global_metadata = decrypt_global_metadata(enc_global_metadata, filled_block_count, dec_key);
-    memset(enc_global_metadata, 0, BUFSIZE);        // clear original global metadata
 
-    int block_index = 0;
-    int start_point = find_point(index, &block_index, global_metadata);
-    char is_block_start = start_point == index ? 1 : 0;
+    List *tmp_list = calloc(1, sizeof(List));
+    InitList(tmp_list);
 
-    if(is_block_start)  // index is located between two blocks
-    {
-        insert_data = calloc(insert_size, sizeof(unsigned char));
+    encrypt(tmp_list, insert_data, insert_size, enc_key, front_link, back_link);
 
-        Node *prev_node = seekNode(list, block_index);
-        Node *next_node = seekNode(list, block_index);
+    // join tmp_list to list[index]
+    Node *prev_node = seekNode(out, block_index);
+    Node *next_node = seekNode(out, block_index + 1);
+    tmp_list->head->next->prev = prev_node;
+    tmp_list->tail->prev->next = next_node;
+    prev_node->next = tmp_list->head->next;
+    next_node->prev = tmp_list->tail->prev;
+    out->count += tmp_list->count;
 
-        replace_link(prev_node, front_link, -1, enc_key, dec_key);
-        replace_link(next_node, back_link, 0, enc_key, dec_key);
-
-        // Copy data we want to insert
-        memcpy(insert_data, input, insert_size);
-    }
-    else                // index is located in the middle of one block
-    {
-        // 1. get block
-        // 2. divide block at index
-        // 3. fill data into insert_data && bitmap
-
-        block_index++;
-
-        unsigned char *node_data, *insert_point;
-        int block_data_size = (int)global_metadata[block_index];
-        int block_front_size = index - start_point;
-        int block_back_size = block_data_size - block_front_size;
-
-        insert_data = calloc(insert_size + block_data_size, sizeof(unsigned char));
-
-        Node *block = seekNode(list, block_index);
-
-        node_data = calloc(DATA_SIZE_IN_BLOCK, sizeof(unsigned char));
-        extract_node(block, &front_link, &back_link, NULL, node_data, dec_key);
-
-        removeNode(block);
-
-        insert_point = insert_data + block_front_size;
-
-        memcpy(insert_data, node_data, block_front_size);
-        memcpy(insert_point, input, insert_size);
-        memcpy(insert_point + insert_size, node_data + block_front_size, block_back_size);
-
-        insert_size += block_data_size;
-        
-        delete_global(global_metadata, block_index, 1);
-    }
-
-    encrypt(list, insert_data, insert_size, enc_key, front_link, back_link);
+    free(tmp_list);
 
     unsigned char *new_metadata = calloc(insert_size/12 + 1, sizeof(unsigned char));
 
@@ -578,40 +542,33 @@ void insertion(List *list, unsigned char *input, int index, int insert_size, con
 
     insert_global(global_metadata, new_metadata, block_index);
 
+    free(new_metadata);
+
     encrypt_global_metadata(global_metadata, enc_global_metadata, list->count, enc_key);
-
 }
 
-void first_insertion(List *list, unsigned char *input, int insert_size, link_t front_link, 
-                        const void *enc_key, unsigned char *global_meta){
-    int index;
-    int filled_block_count = list->count;
+void encrypt_block(Node *node, link_t front_link, link_t back_link, bitmap_t bitmap, unsigned char *data,
+                    const void *enc_key){
+    unsigned char tmp_data[sizeof(node->data)] = {0, };
+    int index = 0;
 
-    encrypt(list, input, insert_size, enc_key, front_link, front_link);
+    tmp_data[index] = front_link;
+    index += sizeof(link_t);
 
-    unsigned char *plain_gmeta = calloc(filled_block_count, sizeof(unsigned char));
-    update_metadata(plain_gmeta, insert_size);
-    encrypt_global_metadata(plain_gmeta, global_meta, filled_block_count, enc_key);
+    tmp_data[index] = bitmap;
+    index += sizeof(bitmap_t);
+
+    memcpy(data, tmp_data + index, DATA_SIZE_IN_BLOCK);
+    index += DATA_SIZE_IN_BLOCK;
+
+    tmp_data[index] = back_link;
+
+    AES_encrypt(tmp_data, &(node->data), enc_key);
 }
 
-void update_metadata(unsigned char *global_metadata, int insert_size){
-    for (int index = 0; insert_size > 0; index++){
-        if (insert_size > DATA_SIZE_IN_BLOCK){
-            global_metadata[index] = DATA_SIZE_IN_BLOCK;
-        }
-        else{
-            global_metadata[index] = insert_size;
-        }
-
-        insert_size -= DATA_SIZE_IN_BLOCK;
-    }
-}
-
-void extract_node(Node *node, link_t *front_link, link_t *back_link, bitmap_t *bitmap,
-                    unsigned char *data, const void *dec_key){
-    size_t node_data_size = sizeof(node->data);
-    size_t data_size = sizeof(link_t) * 2;
-    unsigned char tmp_data[node_data_size] = {0, };
+void decrypt_block(Node *node, link_t *front_link, link_t *back_link, bitmap_t *bitmap, unsigned char *data,
+                    const void *dec_key){
+    unsigned char tmp_data[sizeof(node->data)] = {0, };
 
     AES_decrypt(&(node->data), tmp_data, dec_key);
 
@@ -620,7 +577,7 @@ void extract_node(Node *node, link_t *front_link, link_t *back_link, bitmap_t *b
     }
 
     if(back_link){
-        memcpy(back_link, tmp_data + node_data_size - 1, sizeof(link_t));
+        memcpy(back_link, tmp_data + sizeof(node->data) - 1, sizeof(link_t));
     }
 
     if(bitmap){
@@ -633,17 +590,15 @@ void extract_node(Node *node, link_t *front_link, link_t *back_link, bitmap_t *b
 }
 
 link_t get_link(Node *node, char index, const void *dec_key){
-    size_t data_size = sizeof(node->data);
-    unsigned char tmp_data[data_size] = {0, };
-    index = index < 0 ? (data_size + index) : index;
+    unsigned char tmp_data[sizeof(node->data)] = {0, };
+    index = index < 0 ? (sizeof(node->data) + index) : index;
 
     AES_decrypt(&(node->data), tmp_data, dec_key);
     return tmp_data[index];
 }
 
 bitmap_t get_bitmap(Node *node, const void *dec_key){
-    size_t data_size = sizeof(node->data);
-    unsigned char tmp_data[data_size] = {0, };
+    unsigned char tmp_data[sizeof(node->data)] = {0, };
     unsigned char index = sizeof(link_t);                       // bitmap is next of front link
 
     AES_decrypt(&(node->data), tmp_data, dec_key);
@@ -651,19 +606,17 @@ bitmap_t get_bitmap(Node *node, const void *dec_key){
 }
 
 unsigned char *get_data(Node *node, const void *dec_key){
-    size_t data_size = sizeof(node->data);
-    unsigned char tmp_data[data_size] = {0, };
+    unsigned char tmp_data[sizeof(node->data)] = {0, };
     AES_decrypt(&(node->data), tmp_data, dec_key);
 
-    unsigned char *data = calloc(DATA_SIZE_IN_BLOCK, sizeof(unsigned char))
+    unsigned char *data = calloc(DATA_SIZE_IN_BLOCK, sizeof(unsigned char));
     memcpy(data, tmp_data[DATA_START], DATA_SIZE_IN_BLOCK);
     return data;
 }
 
 void replace_link(Node *node, link_t link, char index, const void *enc_key, const void *dec_key){
-    size_t data_size = sizeof(node->data);
-    unsigned char data[data_size] = {0, };
-    index = index < 0 ? (data_size + index) : index;
+    unsigned char data[sizeof(node->data)] = {0, };
+    index = index < 0 ? (sizeof(node->data) + index) : index;
 
     AES_decrypt(&(node->data), data, dec_key);
     data[index] = link;
@@ -693,19 +646,19 @@ int get_aes_block_count(int data_size){
         return(data_size / LINKLESS_BLOCK_SIZE + 1) * AES_BLOCK_SIZE;
 }
 
-int find_point(int index, int *block_index, unsigned char *global_metadata){
-    int point = 0;
+int find_block_start(int index, int *block_index, unsigned char *global_metadata){
+    int block_start = 0;
 
-    while(point <= index)
+    while(block_start <= index)
     {
-        point += (int) global_metadata[*block_index];
+        block_start += (int) global_metadata[*block_index];
         (*block_index)++;
     }
 
     (*block_index)--;
-    point -= (int) global_metadata[*block_index];
+    block_start -= (int) global_metadata[*block_index];
 
-    return point;
+    return block_start;
 }
 
 void free_node_safely(Node *prev_node, Node *next_node){
