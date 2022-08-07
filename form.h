@@ -30,7 +30,7 @@ void deletion(List *list, int index, int size, const void *enc_key, const void *
 void deletion_single_block(List *list, int index, int size, unsigned char *global_metadata,
                             const void *enc_key, const void *dec_key);
 
-void delete_data_single_block(bitmap_t *bitmap, unsigned char *block_data, int size);
+int delete_data_single_block(bitmap_t *bitmap, unsigned char *block_data, int size);
 
 void delete_after_all(List *list, int index, unsigned char *global_metadata,
                         const void *enc_key, const void *dec_key);
