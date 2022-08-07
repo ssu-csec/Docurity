@@ -205,11 +205,7 @@ void decrypt(unsigned char *dst, List *list, const void *dec_key)
     Node *node = list->head->next;
 
     for (int count = 0; count < list->count; count++){
-
-        memcpy(node_data, &(node->data), 16);
-        AES_decrypt(node_data, node_data, dec_key);
-
-        link_front = node_data[0];
+        decrypt_block(node, &link_front, &link_back, &bitmap, node_data, dec_key);
 
         is_valid_block = index > 0 && link_front != link_back;
 
@@ -224,9 +220,7 @@ void decrypt(unsigned char *dst, List *list, const void *dec_key)
         }
         else
         {
-            link_back = node_data[15];
 
-            memcpy(&bitmap, &node_data[1], 2);
             index = copy_data(dst, node_data, &bitmap);
 
             dst += index;
@@ -661,17 +655,18 @@ void replace_link(Node *node, link_t link, char index, const void *enc_key, cons
     AES_encrypt(data, &(node->data), enc_key);
 }
 
-int copy_data(unsigned char *dst, unsigned char *src, bitmap_t *bitmap){
+int copy_data(unsigned char *dst, unsigned char *src, bitmap_t bitmap){
     int index = 0;
+    bitmap_t check_bitmap = (bitmap_t) BITMAP_SEED;
 
-    for (int data_index = DATA_START; data_index < AES_BLOCK_SIZE - LINK_LENGTH; ++data_index)
+    for (int data_index = 0; data_index < DATA_SIZE_IN_BLOCK; data_index++)
     {
-        if((*bitmap & BITMAP_SEED) != 0)
+        if((bitmap & check_bitmap) != 0)
         {
             dst[index] = src[data_index];
             index++;
-            *bitmap = *bitmap << 1;
         }
+        check_bitmap = check_bitmap >> 1;
     }
 
     return index;

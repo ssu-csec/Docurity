@@ -55,7 +55,7 @@ unsigned char *get_data(Node *node, const void *dec_key);
 
 void replace_link(Node *node, link_t link, char index, const void *enc_key, const void *dec_key);
 
-int copy_data(unsigned char *dst, unsigned char *src, bitmap_t *bitmap);
+int copy_data(unsigned char *dst, unsigned char *src, bitmap_t bitmap);
 
 int get_aes_block_count(int data_size);
 
