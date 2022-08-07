@@ -48,6 +48,13 @@ void removeNode(Node *this)
     free(this);
 }
 
+void removeNodes(List *list, int start, int end){
+    for(int block_num = start; block_num < end; block_num++)
+    {
+        removeNode(seekNode(list, block_num));
+    }
+}
+
 Node *seekNode(List *list, int index)
 {
     Node *seek = list->head->next;

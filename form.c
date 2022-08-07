@@ -271,7 +271,7 @@ void deletion(List *list, int index, int size, const void *enc_key, const void *
 
     if(delete_from_block_start && delete_to_block_end)     // delete entire blocks
     {
-        deleted_blocks = bound_block_num - first_block_num;
+        deleted_blocks = bound_block_num > 0 ? bound_block_num - first_block_num : 0;
 
         if(first_block_num > 0){
             Node *front_block = seekNode(list, first_block_num - 1);
@@ -280,15 +280,13 @@ void deletion(List *list, int index, int size, const void *enc_key, const void *
             replace_link(front_block, front_link, -1, enc_key, dec_key);
             replace_link(bound_block, front_link, 0, enc_key, dec_key);
 
-            removeNode(seekNode(list, first_block_num));
-            removeNode(seekNode(list, last_block_num));
+            removeNodes(list, first_block_num, last_block_num);
         }
         else{   // from head of list to a block deleted
             Node *new_head_block = seekNode(list, bound_block_num);
             Node *last_block = list->tail;
 
-            removeNode(seekNode(list, first_block_num));
-            removeNode(seekNode(list, last_block_num));
+            removeNodes(list, first_block_num, last_block_num);
 
             link_t ivec = get_link(last_block, -1, dec_key);
             replace_link(new_head_block, ivec, 0, enc_key, dec_key);
@@ -337,10 +335,7 @@ void deletion(List *list, int index, int size, const void *enc_key, const void *
 
         encrypt_block(new_node, front_link, back_link, bitmap, block_data, enc_key);
 
-        for(int block_num = first_block_num; block_num < last_block_num; block_num++)
-        {
-            removeNode(seekNode(list, block_num));
-        }
+        removeNodes(list, first_block_num, last_block_num);
 
         insertNode(new_node, seekNode(list, first_block_num));
 
@@ -378,10 +373,7 @@ void deletion(List *list, int index, int size, const void *enc_key, const void *
 
         encrypt_block(new_node, front_link, back_link, bitmap, block_data, enc_key);
 
-        for(int block_num = first_block_num + 1; block_num < bound_block_num; block_num++)
-        {
-            removeNode(seekNode(list, block_num));
-        }
+        removeNodes(list, first_block_num + 1, bound_block_num);
 
         insertNode(new_node, seekNode(list, first_block_num));
 
@@ -438,10 +430,7 @@ void deletion(List *list, int index, int size, const void *enc_key, const void *
         encrypt_block(front_block, old_front_link, back_link, front_bitmap, front_block_data, enc_key);
         encrypt_block(back_block, front_link, old_back_link, back_bitmap, back_block_data, enc_key);
 
-        for(int block_num = first_block_num + 1; block_num < last_block_num; block_num++)
-        {
-            removeNode(seekNode(list, block_num));
-        }
+        removeNodes(list, first_block_num + 1, last_block_num);
 
         list->count -= deleted_blocks;
         delete_global(global_metadata, first_block_num, deleted_blocks);

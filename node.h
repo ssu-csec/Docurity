@@ -30,6 +30,8 @@ Node *createNode(unsigned char data[16]);
 
 void removeNode(Node *this);
 
+void removeNodes(List *list, int start, int end);
+
 void insertNode(Node *this, Node *next);
 
 Node *seekNode(List *list, int index);
