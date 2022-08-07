@@ -202,6 +202,7 @@ void decrypt(unsigned char *dst, List *list, const void *dec_key)
     link_t link_front = 0;
     link_t link_back = 0;
     bitmap_t bitmap;
+    unsigned char *ptr = dst;
     Node *node = list->head->next;
 
     for (int count = 0; count < list->count; count++){
@@ -221,9 +222,9 @@ void decrypt(unsigned char *dst, List *list, const void *dec_key)
         else
         {
 
-            copied_size = copy_data(dst, node_data, bitmap);
+            copied_size = copy_data(ptr, node_data, bitmap);
 
-            dst += copied_size;
+            ptr += copied_size;
         }
 
         node = node->next;
