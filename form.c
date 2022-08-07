@@ -464,7 +464,7 @@ void insertion(List *list, unsigned char *input, int index, int insert_size, con
     // First time of insertion
     if(index == 0 && filled_block_count == 0)
     {
-        global_metadata = calloc(filled_block_count, sizeof(unsigned char));
+        global_metadata = calloc(insert_size/12 + 1, sizeof(unsigned char));
         encrypt(list, input, insert_size, enc_key, front_link, front_link);
 
         Node *first_node = list->head->next;
