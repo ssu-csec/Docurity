@@ -397,7 +397,7 @@ void deletion_single_block(List *list, int block_index, int size, unsigned char 
                             const void *enc_key, const void *dec_key){
     Node *block = seekNode(list, block_index);
     link_t front_link, back_link;
-    bitmap_t bitmap, check_bitmap;
+    bitmap_t bitmap;
     unsigned char *block_data = calloc(DATA_SIZE_IN_BLOCK, sizeof(unsigned char));
 
     decrypt_block(block, &front_link, &back_link, &bitmap, block_data, dec_key);
@@ -424,7 +424,7 @@ int delete_data_single_block(bitmap_t *bitmap, unsigned char *block_data, int si
             break;
         }
 
-        if(((*bitmap) & check_bitmap) != 0){
+        if((*bitmap) & check_bitmap){
             block_data[data_index] = 0;
             *bitmap = (*bitmap) ^ check_bitmap;
             delete_count++;
@@ -597,11 +597,12 @@ void encrypt_block(Node *node, link_t front_link, link_t back_link, bitmap_t bit
     tmp_data[index] = back_link;
 
     AES_encrypt(tmp_data, &(node->data), enc_key);
+    free(tmp_data);
 }
 
 void decrypt_block(Node *node, link_t *front_link, link_t *back_link, bitmap_t *bitmap, unsigned char *data,
                     const void *dec_key){
-    unsigned char tmp_data[sizeof(node->data)] = {0, };
+    unsigned char *tmp_data = calloc(1, sizeof(node->data));
 
     AES_decrypt(&(node->data), tmp_data, dec_key);
 
@@ -620,6 +621,7 @@ void decrypt_block(Node *node, link_t *front_link, link_t *back_link, bitmap_t *
     if(data){
         memcpy(data, tmp_data + DATA_START, DATA_SIZE_IN_BLOCK);
     }
+    free(tmp_data);
 }
 
 link_t get_link(Node *node, char index, const void *dec_key){
