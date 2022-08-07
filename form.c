@@ -593,7 +593,7 @@ void encrypt_block(Node *node, link_t front_link, link_t back_link, bitmap_t bit
     tmp_data[index] = front_link;
     index += sizeof(link_t);
 
-    memcpy(tmp_data + index, bitmap, sizeof(bitmap_t));
+    memcpy(tmp_data + index, &bitmap, sizeof(bitmap_t));
     index += sizeof(bitmap_t);
 
     memcpy(tmp_data + index, data, DATA_SIZE_IN_BLOCK);
