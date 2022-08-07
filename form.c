@@ -439,15 +439,15 @@ void delete_after_all(List *list, int index, unsigned char *global_metadata,
                         const void *enc_key, const void *dec_key){
     // first block to be delete
     int first_block_num = 0;
-    int first_block_start = find_block_start(delete_start, &first_block_num, global_metadata);
-    int delete_size = index - first_block_start
+    int first_block_start = find_block_start(index, &first_block_num, global_metadata);
+    int delete_size = index - first_block_start;
 
     removeNodes(list, first_block_num + 1, list->count);
 
     deletion_single_block(list, first_block_start, delete_size, global_metadata, dec_key);
 }
 
-void delete_blocks(List list, int first_block_num, int last_block_num, int bound_block_num
+void delete_blocks(List *list, int first_block_num, int last_block_num, int bound_block_num,
                             unsigned char *global_metadata, const void *enc_key, const void *dec_key){
     int deleted_blocks = bound_block_num > 0 ? bound_block_num - first_block_num : 0;
 
