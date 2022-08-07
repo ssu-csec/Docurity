@@ -209,7 +209,7 @@ void decrypt(unsigned char *dst, List *list, const void *dec_key)
     for (int count = 0; count < list->count; count++){
         decrypt_block(node, &link_front, &link_back, &bitmap, node_data, dec_key);
 
-        is_valid_block = copied_size > 0 && link_front != link_back;
+        is_valid_block = copied_size > 0 && link_front != link_check;
 
         if(is_valid_block)
         {
@@ -487,10 +487,6 @@ void delete_blocks(List *list, int first_block_num, int last_block_num, int boun
 void insertion(List *list, unsigned char *input, int index, int insert_size, const void *enc_key, const void *dec_key, 
                 unsigned char *enc_global_metadata)                                                                      
 {
-    if(index > list->count){        // out of bound
-        return;
-    }
-
     srand(time(NULL));
 
     link_t front_link = rand() % 256;
@@ -504,7 +500,7 @@ void insertion(List *list, unsigned char *input, int index, int insert_size, con
     if(index == 0 && filled_block_count == 0)
     {
         encrypt(list, input, insert_size, enc_key, front_link, front_link);
-        global_metadata = calloc(insert_size/12 + 1, sizeof(unsigned char));
+        global_metadata = calloc(insert_size/DATA_SIZE_IN_BLOCK + 1, sizeof(unsigned char));
         update_metadata(global_metadata, insert_size);
     }
     else{
@@ -573,7 +569,7 @@ void insertion(List *list, unsigned char *input, int index, int insert_size, con
 
         free(tmp_list);
 
-        unsigned char *new_metadata = calloc(insert_size/12 + 1, sizeof(unsigned char));
+        unsigned char *new_metadata = calloc(insert_size/DATA_SIZE_IN_BLOCK + 1, sizeof(unsigned char));
         update_metadata(new_metadata, insert_size);
         insert_global(global_metadata, new_metadata, block_index);
         free(new_metadata);
