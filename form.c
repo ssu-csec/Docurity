@@ -122,15 +122,14 @@ void delete_global(unsigned char *global_metadata, int index, int size)
 }
 
 void update_metadata(unsigned char *global_metadata, int insert_size){
-    for (int index = 0; 0 < insert_size; index++){
-        if (insert_size - DATA_SIZE_IN_BLOCK > DATA_SIZE_IN_BLOCK){
-            global_metadata[index] = DATA_SIZE_IN_BLOCK;
-        }
-        else{
-            global_metadata[index] = insert_size;
-        }
-        insert_size -= DATA_SIZE_IN_BLOCK;
+    int block_size = insert_size / DATA_SIZE_IN_BLOCK;
+    int index;
+
+    for (index = 0; 0 < block_size; index++){
+        global_metadata[index] = DATA_SIZE_IN_BLOCK;
     }
+
+    global_metadata[index] = insert_size % DATA_SIZE_IN_BLOCK;
 }
 
 
