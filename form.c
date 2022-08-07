@@ -202,7 +202,7 @@ void decrypt(unsigned char *dst, List *list, const void *dec_key)
     link_t link_front = 0;
     link_t link_back = 0;
     bitmap_t bitmap;
-    Node *node = list->head;
+    Node *node = list->head->next;
 
     for (int count = 0; count < list->count; count++){
 
@@ -467,13 +467,6 @@ void insertion(List *list, unsigned char *input, int index, int insert_size, con
     if(index == 0 && filled_block_count == 0)
     {
         encrypt(list, input, insert_size, enc_key, front_link, front_link);
-
-        Node *first_node = list->head->next;
-        list->head->next = first_node;
-        list->tail = list->tail->prev;
-        list->head->prev = NULL;
-        list->tail->next = NULL;
-
         global_metadata = calloc(insert_size/12 + 1, sizeof(unsigned char));
         update_metadata(global_metadata, insert_size);
     }
@@ -487,15 +480,9 @@ void insertion(List *list, unsigned char *input, int index, int insert_size, con
         if(is_block_start)  // allocate new block
         {
             insert_data = calloc(insert_size, sizeof(unsigned char));
-
-            Node *prev_node = seekNode(list, block_index-1);
-            Node *next_node = seekNode(list, block_index+1);
-
-            replace_link(prev_node, front_link, -1, enc_key, dec_key);
-            replace_link(next_node, back_link, 0, enc_key, dec_key);
-
             // Copy data we want to insert
             memcpy(insert_data, input, insert_size);
+
         }
         else                // index is located in the middle of one block
         {
@@ -503,13 +490,10 @@ void insertion(List *list, unsigned char *input, int index, int insert_size, con
             // 2. divide block at index
             // 3. fill data into insert_data && bitmap
 
-            block_index++;
-
             unsigned char *block_data, *insert_point;
             int block_data_size = (int)global_metadata[block_index];
             int block_front_size = index - start_point;
             int block_back_size = block_data_size - block_front_size;
-
             insert_data = calloc(insert_size + block_data_size, sizeof(unsigned char));
 
             Node *block = seekNode(list, block_index);
@@ -530,6 +514,11 @@ void insertion(List *list, unsigned char *input, int index, int insert_size, con
             
             insert_size += block_data_size;
         }
+        Node *prev_node = seekNode(list, block_index-1);
+        Node *next_node = seekNode(list, block_index);
+
+        replace_link(prev_node, front_link, -1, enc_key, dec_key);
+        replace_link(next_node, back_link, 0, enc_key, dec_key);
 
         List *tmp_list = calloc(1, sizeof(List));
         InitList(tmp_list);
@@ -538,7 +527,7 @@ void insertion(List *list, unsigned char *input, int index, int insert_size, con
 
         // join tmp_list to list[index]
         Node *prev_node = seekNode(list, block_index - 1);
-        Node *next_node = seekNode(list, block_index + 1);
+        Node *next_node = seekNode(list, block_index);
         Node *tmp_head_node = tmp_list->head->next;
         Node *tmp_tail_node = tmp_list->head->next;
         tmp_head_node->prev = prev_node;
