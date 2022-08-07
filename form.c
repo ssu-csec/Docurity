@@ -457,7 +457,7 @@ void insertion(List *list, unsigned char *input, int index, int insert_size, con
 
     link_t front_link = rand() % 256;
     link_t back_link = rand() % 256;
-    unsigned char *global_metadata, *new_metadata, *insert_data;
+    unsigned char *global_metadata, *insert_data;
 
     int block_index = 0;
     int filled_block_count = list->count;
@@ -475,7 +475,7 @@ void insertion(List *list, unsigned char *input, int index, int insert_size, con
         list->head->prev = NULL;
         list->tail->next = NULL;
 
-        new_metadata = calloc(insert_size/12 + 1, sizeof(unsigned char));
+        global_metadata = calloc(insert_size/12 + 1, sizeof(unsigned char));
     }
     else{
         global_metadata = decrypt_global_metadata(enc_global_metadata, filled_block_count, dec_key);
@@ -484,7 +484,7 @@ void insertion(List *list, unsigned char *input, int index, int insert_size, con
         int start_point = find_block_start(index, &block_index, global_metadata);
         char is_block_start = start_point == index ? 1 : 0;
 
-        if(is_block_start)  // index is located between two blocks
+        if(is_block_start)  // allocate new block
         {
             insert_data = calloc(insert_size, sizeof(unsigned char));
 
@@ -547,14 +547,11 @@ void insertion(List *list, unsigned char *input, int index, int insert_size, con
 
         free(tmp_list);
 
-        new_metadata = calloc(insert_size/12 + 1, sizeof(unsigned char));
+        unsigned char *new_metadata = calloc(insert_size/12 + 1, sizeof(unsigned char));
+        update_metadata(new_metadata, insert_size);
+        insert_global(global_metadata, new_metadata, block_index);
+        free(new_metadata);
     }
-
-    update_metadata(new_metadata, insert_size);
-
-    insert_global(global_metadata, new_metadata, block_index);
-
-    free(new_metadata);
 
     encrypt_global_metadata(global_metadata, enc_global_metadata, list->count, enc_key);
 }
