@@ -440,6 +440,10 @@ void deletion_single_block(List *list, int index, int size, unsigned char *globa
         check_bitmap = check_bitmap >> 1;
     }
 
+    if(bitmap == 0){
+        removeNode(block);
+    }
+
     encrypt_block(block, front_link, back_link, bitmap, block_data, enc_key);
 }
 
