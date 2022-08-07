@@ -425,7 +425,7 @@ int delete_data_single_block(bitmap_t *bitmap, unsigned char *block_data, int si
     bitmap_t check_bitmap = (bitmap_t) BITMAP_SEED;
 
     for (int data_index = 0; data_index < DATA_SIZE_IN_BLOCK; data_index++){
-        if(delete_count > size){
+        if(delete_count >= size){
             break;
         }
 
