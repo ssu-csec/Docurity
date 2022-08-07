@@ -123,7 +123,7 @@ void delete_global(unsigned char *global_metadata, int index, int size)
 
 void update_metadata(unsigned char *global_metadata, int insert_size){
     for (int index = 0; 0 < insert_size; index++){
-        if (insert_siz - DATA_SIZE_IN_BLOCK > DATA_SIZE_IN_BLOCK){
+        if (insert_size - DATA_SIZE_IN_BLOCK > DATA_SIZE_IN_BLOCK){
             global_metadata[index] = DATA_SIZE_IN_BLOCK;
         }
         else{
