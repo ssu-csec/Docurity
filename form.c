@@ -197,7 +197,7 @@ void encrypt(List *list, const unsigned char *input, size_t size, const void *en
 void decrypt(unsigned char *dst, List *list, const void *dec_key)
 {
     char is_valid_block;
-    unsigned char node_data[AES_BLOCK_SIZE] = {0, };
+    unsigned char node_data[DATA_SIZE_IN_BLOCK] = {0, };
     int copied_size = 0;
     link_t link_front = 0;
     link_t link_back = 0;
@@ -582,7 +582,7 @@ void insertion(List *list, unsigned char *input, int index, int insert_size, con
 
 void encrypt_block(Node *node, link_t front_link, link_t back_link, bitmap_t bitmap, unsigned char *data,
                     const void *enc_key){
-    unsigned char tmp_data[sizeof(node->data)] = {0, };
+    unsigned char *tmp_data = calloc(1, sizeof(node->data));
     int index = 0;
 
     tmp_data[index] = front_link;
