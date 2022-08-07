@@ -58,6 +58,7 @@ unsigned char *decrypt_global_metadata(const unsigned char *enc_global_metadata,
 {
     unsigned char tmp[AES_BLOCK_SIZE] = {0, };
     unsigned char *global_metadata = calloc(size, sizeof(unsigned char));
+    unsigned char *metadata_ptr = global_metadata;
     int aes_block_count = get_aes_block_count(size);
     int first_check = aes_block_count;
     link_t link_front = 0;
@@ -83,12 +84,12 @@ unsigned char *decrypt_global_metadata(const unsigned char *enc_global_metadata,
         link_back = tmp[15];
 
         for (int index = 0; index < LINKLESS_BLOCK_SIZE; index++){
-            global_metadata[index] = tmp[index + sizeof(link_t)];
+            metadata_ptr[index] = tmp[index + sizeof(link_t)];
         }
 
         aes_block_count -= AES_BLOCK_SIZE;
         enc_global_metadata += AES_BLOCK_SIZE;
-        global_metadata += LINKLESS_BLOCK_SIZE;
+        metadata_ptr += LINKLESS_BLOCK_SIZE;
     }
 
     return global_metadata;
