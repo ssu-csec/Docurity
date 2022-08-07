@@ -444,7 +444,7 @@ void delete_after_all(List *list, int index, unsigned char *global_metadata,
 
     removeNodes(list, first_block_num + 1, list->count);
 
-    deletion_single_block(list, first_block_start, delete_size, global_metadata, dec_key);
+    deletion_single_block(list, first_block_start, delete_size, global_metadata, enc_key, dec_key);
 }
 
 void delete_blocks(List *list, int first_block_num, int last_block_num, int bound_block_num,

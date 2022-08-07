@@ -35,7 +35,7 @@ void delete_data_single_block(bitmap_t *bitmap, unsigned char *block_data, int s
 void delete_after_all(List *list, int index, unsigned char *global_metadata,
                         const void *enc_key, const void *dec_key);
 
-void delete_blocks(List list, int first_block_num, int last_block_num, int bound_block_num,
+void delete_blocks(List *list, int first_block_num, int last_block_num, int bound_block_num,
                             unsigned char *global_metadata, const void *enc_key, const void *dec_key);
 
 void insertion(List *list, unsigned char *input, int index, int insert_size, const void *enc_key, const void *dec_key, 
