@@ -125,7 +125,7 @@ void update_metadata(unsigned char *global_metadata, int insert_size){
     int block_size = insert_size / DATA_SIZE_IN_BLOCK;
     int index;
 
-    for (index = 0; 0 < block_size; index++){
+    for (index = 0; index < block_size; index++){
         global_metadata[index] = DATA_SIZE_IN_BLOCK;
     }
 
