@@ -41,33 +41,35 @@ int main()
 
     unsigned char input[BUFSIZE];
     unsigned char inst[10] = {0, };
+    unsigned char result[BUFSIZE * 10];
     int index = 0;
     while(1)
     {
-        printf("Insert or Delete? ");
+        printf("\nInsert or Delete? ");
         scanf("%s", inst);
         if(strncmp(inst, "finish", 6) == 0)
             break;
-        printf("input index: ");
+        printf("\ninput index: ");
         scanf("%d", &index);
         if(strncmp(inst, "Insert", 6) == 0)
         {
-            printf("input data: ");
+            printf("\ninput data: ");
             scanf("%s", input);
-            insertion(input, cipherText, index, strlen(input), enc_key, dec_key, global_meta);
+            insertion(cipherText, input, index, strlen(input), enc_key, dec_key, global_meta);
         }
         else if(strncmp(inst, "Delete", 6) == 0)
         {
             int length = 0;
-            printf("input delete length");
+            printf("\ninput delete length");
             scanf("%d", &length);
             deletion(cipherText, index, length, enc_key, dec_key, global_meta);
         }
 
         printf("one loop finish!, %d\n", cipherText->count);
+	    decrypt(result, cipherText, dec_key);
+	    printf("decrypted data : %s\n", result);
     }
 
-    unsigned char result[BUFSIZE * 10];
     decrypt(cipherText, result, dec_key);
 
     printf("decrypted data : %s", result);
