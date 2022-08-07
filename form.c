@@ -539,10 +539,12 @@ void insertion(List *list, unsigned char *input, int index, int insert_size, con
         // join tmp_list to list[index]
         Node *prev_node = seekNode(list, block_index - 1);
         Node *next_node = seekNode(list, block_index + 1);
-        tmp_list->head->next->prev = prev_node;
-        tmp_list->tail->prev->next = next_node;
-        prev_node->next = tmp_list->head->next;
-        next_node->prev = tmp_list->tail->prev;
+        Node *tmp_head_node = tmp_list->head->next;
+        Node *tmp_tail_node = tmp_list->head->next;
+        tmp_head_node->prev = prev_node;
+        tmp_tail_node->next = next_node;
+        prev_node->next = tmp_head_node;
+        next_node->prev = tmp_tail_node;
         list->count += tmp_list->count;
 
         free(tmp_list);
