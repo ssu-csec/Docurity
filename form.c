@@ -456,6 +456,7 @@ void insertion(List *list, unsigned char *input, int index, int insert_size, con
     link_t back_link = rand() % 256;
     unsigned char *global_metadata, *insert_data;
 
+    int block_index = 0;
     int filled_block_count = list->count;
 
     // First time of insertion
@@ -467,7 +468,6 @@ void insertion(List *list, unsigned char *input, int index, int insert_size, con
         global_metadata = decrypt_global_metadata(enc_global_metadata, filled_block_count, dec_key);
         memset(enc_global_metadata, 0, BUFSIZE);        // clear original global metadata
 
-        int block_index = 0;
         int start_point = find_block_start(index, &block_index, global_metadata);
         char is_block_start = start_point == index ? 1 : 0;
 
@@ -518,7 +518,6 @@ void insertion(List *list, unsigned char *input, int index, int insert_size, con
             insert_size += block_data_size;
         }
     }
-
 
     List *tmp_list = calloc(1, sizeof(List));
     InitList(tmp_list);
