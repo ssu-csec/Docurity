@@ -198,7 +198,7 @@ void decrypt(unsigned char *dst, List *list, const void *dec_key)
 {
     char is_valid_block;
     unsigned char node_data[AES_BLOCK_SIZE] = {0, };
-    int index = 0;
+    int copied_size = 0;
     link_t link_front = 0;
     link_t link_back = 0;
     bitmap_t bitmap;
@@ -207,7 +207,7 @@ void decrypt(unsigned char *dst, List *list, const void *dec_key)
     for (int count = 0; count < list->count; count++){
         decrypt_block(node, &link_front, &link_back, &bitmap, node_data, dec_key);
 
-        is_valid_block = index > 0 && link_front != link_back;
+        is_valid_block = copied_size > 0 && link_front != link_back;
 
         if(is_valid_block)
         {
@@ -221,9 +221,9 @@ void decrypt(unsigned char *dst, List *list, const void *dec_key)
         else
         {
 
-            index = copy_data(dst, node_data, &bitmap);
+            copied_size = copy_data(dst, node_data, bitmap);
 
-            dst += index;
+            dst += copied_size;
         }
 
         node = node->next;
@@ -661,7 +661,7 @@ int copy_data(unsigned char *dst, unsigned char *src, bitmap_t bitmap){
 
     for (int data_index = 0; data_index < DATA_SIZE_IN_BLOCK; data_index++)
     {
-        if((bitmap & check_bitmap) != 0)
+        if(bitmap & check_bitmap)
         {
             dst[index] = src[data_index];
             index++;
