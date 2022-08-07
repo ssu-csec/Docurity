@@ -463,6 +463,7 @@ void insertion(List *list, unsigned char *input, int index, int insert_size, con
     if(index == 0 && filled_block_count == 0)
     {
         global_metadata = calloc(filled_block_count, sizeof(unsigned char));
+        encrypt(list, insert_data, insert_size, enc_key, front_link, back_link);
     }
     else{
         global_metadata = decrypt_global_metadata(enc_global_metadata, filled_block_count, dec_key);
@@ -517,23 +518,23 @@ void insertion(List *list, unsigned char *input, int index, int insert_size, con
             
             insert_size += block_data_size;
         }
+
+        List *tmp_list = calloc(1, sizeof(List));
+        InitList(tmp_list);
+
+        encrypt(tmp_list, insert_data, insert_size, enc_key, front_link, back_link);
+
+        // join tmp_list to list[index]
+        Node *prev_node = seekNode(list, block_index);
+        Node *next_node = seekNode(list, block_index + 1);
+        tmp_list->head->next->prev = prev_node;
+        tmp_list->tail->prev->next = next_node;
+        prev_node->next = tmp_list->head->next;
+        next_node->prev = tmp_list->tail->prev;
+        list->count += tmp_list->count;
+
+        free(tmp_list);
     }
-
-    List *tmp_list = calloc(1, sizeof(List));
-    InitList(tmp_list);
-
-    encrypt(tmp_list, insert_data, insert_size, enc_key, front_link, back_link);
-
-    // join tmp_list to list[index]
-    Node *prev_node = seekNode(list, block_index);
-    Node *next_node = seekNode(list, block_index + 1);
-    tmp_list->head->next->prev = prev_node;
-    tmp_list->tail->prev->next = next_node;
-    prev_node->next = tmp_list->head->next;
-    next_node->prev = tmp_list->tail->prev;
-    list->count += tmp_list->count;
-
-    free(tmp_list);
 
     unsigned char *new_metadata = calloc(insert_size/12 + 1, sizeof(unsigned char));
 
