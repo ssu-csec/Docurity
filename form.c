@@ -542,9 +542,9 @@ void insertion(List *list, unsigned char *input, int index, int insert_size, con
         Node *prev_node = seekNode(list, block_index - 1);
         Node *next_node = seekNode(list, block_index + 1);
         tmp_list->head->next->prev = prev_node;
-        tmp_list->tail->next = next_node;
+        tmp_list->tail->prev->next = next_node;
         prev_node->next = tmp_list->head->next;
-        next_node->prev = tmp_list->tail;
+        next_node->prev = tmp_list->tail->prev;
         list->count += tmp_list->count;
 
         free(tmp_list);
