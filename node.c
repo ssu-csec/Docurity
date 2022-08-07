@@ -12,9 +12,10 @@
 void InitList(List *list)
 {
     unsigned char empty_data[16] = {0, };
-    Node *dummy_node = createNode(empty_data);
-    list->head = dummy_node;
-    list->tail = dummy_node;
+    Node *dummy_head = createNode(empty_data);
+    Node *dummy_tail = createNode(empty_data);
+    list->head = dummy_head;
+    list->tail = dummy_tail;
     list->head->next = list->tail;
     list->tail->prev = list->head;
     list->count = 0;
@@ -49,11 +50,7 @@ void removeNode(Node *this)
 
 Node *seekNode(List *list, int index)
 {
-    Node *seek = list->head;
-    if (index < 0 || index >= list->count){
-        return seek;
-    }
-
+    Node *seek = list->head->next;
     for(int i = 0; i < index; i++)
     {
         seek = seek->next;

@@ -472,7 +472,7 @@ void insertion(List *list, unsigned char *input, int index, int insert_size, con
         removeNode(list->head); // delete dummy_node
 
         list->head = first_node;
-        list->tail = list->tail->prev;
+        list->tail = first_node;
         list->head->prev = NULL;
         list->tail->next = NULL;
 
