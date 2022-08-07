@@ -27,6 +27,12 @@ void decrypt(unsigned char *dst, List *list, const void *dec_key);
 void deletion(List *list, int index, int size, const void *enc_key, const void *dec_key, 
                 unsigned char *enc_global_metadata);
 
+void deletion_single_block(List *list, int index, int size, unsigned char *global_metadata,
+                            const void *enc_key, const void *dec_key);
+
+void delete_entire_block(List list, int first_block_num, int last_block_num, int bound_block_num,
+                            unsigned char *global_metadata, const void *enc_key, const void *dec_key);
+
 void insertion(List *list, unsigned char *input, int index, int insert_size, const void *enc_key, const void *dec_key, 
                 unsigned char *enc_global_metadata);
 
