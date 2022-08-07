@@ -464,6 +464,11 @@ void insertion(List *list, unsigned char *input, int index, int insert_size, con
     {
         global_metadata = calloc(filled_block_count, sizeof(unsigned char));
         encrypt(list, insert_data, insert_size, enc_key, front_link, back_link);
+        Node *first_node = list->head->next;
+        removeNode(list->head); // delete dummy_node
+        list->head = first_node;
+        list->head->prev = NULL;
+        list->tail->next = NULL;
     }
     else{
         global_metadata = decrypt_global_metadata(enc_global_metadata, filled_block_count, dec_key);

@@ -11,9 +11,10 @@
 
 void InitList(List *list)
 {
-    unsigned char data[16] = {0, };
-    list->head = createNode(data);
-    list->tail = createNode(data);
+    unsigned char empty_data[16] = {0, };
+    Node *dummy_node = createNode(empty_data);
+    list->head = dummy_node;
+    list->tail = dummy_node;
     list->head->next = list->tail;
     list->tail->prev = list->head;
     list->count = 0;
