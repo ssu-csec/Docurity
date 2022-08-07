@@ -114,7 +114,7 @@ void delete_global(unsigned char *global_metadata, int index, int size)
 {
     int global_metadata_size = strlen(global_metadata);
     int delete_position = global_metadata + index;
-    int next_data_start = delete_position + size;
+    int next_data_start = delete_position + size - 1;
     int next_data_size = global_metadata_size - (index + size);
 
     memcpy(delete_position, next_data_start, next_data_size);
