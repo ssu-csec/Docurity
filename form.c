@@ -82,8 +82,8 @@ unsigned char *decrypt_global_metadata(const unsigned char *enc_global_metadata,
 
         link_back = tmp[15];
 
-        for (int n = LINK_LENGTH; n < AES_BLOCK_SIZE - LINK_LENGTH; ++n){
-            global_metadata[n - LINK_LENGTH] = tmp[n];
+        for (int index = 0; index < LINKLESS_BLOCK_SIZE; index++){
+            global_metadata[index] = tmp[index + sizeof(link_t)];
         }
 
         aes_block_count -= AES_BLOCK_SIZE;
@@ -121,7 +121,7 @@ void delete_global(unsigned char *global_metadata, int index, int size)
 }
 
 void update_metadata(unsigned char *global_metadata, int insert_size){
-    for (int index = 0; insert_size > 0; index++){
+    for (int index = 0; 0 < insert_size; index++){
         if (insert_size > DATA_SIZE_IN_BLOCK){
             global_metadata[index] = DATA_SIZE_IN_BLOCK;
         }
