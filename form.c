@@ -469,10 +469,8 @@ void insertion(List *list, unsigned char *input, int index, int insert_size, con
         encrypt(list, input, insert_size, enc_key, front_link, front_link);
 
         Node *first_node = list->head->next;
-        removeNode(list->head); // delete dummy_node
-
-        list->head = first_node;
-        list->tail = first_node;
+        list->head->next = first_node;
+        list->tail = list->tail->prev;
         list->head->prev = NULL;
         list->tail->next = NULL;
 
