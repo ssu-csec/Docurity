@@ -454,6 +454,10 @@ void deletion(List *list, int index, int size, const void *enc_key, const void *
 void insertion(List *list, unsigned char *input, int index, int insert_size, const void *enc_key, const void *dec_key, 
                 unsigned char *enc_global_metadata)                                                                      
 {
+    if(index > list->count){        // out of bound
+        return;
+    }
+
     srand(time(NULL));
 
     link_t front_link = rand() % 256;
@@ -526,8 +530,6 @@ void insertion(List *list, unsigned char *input, int index, int insert_size, con
         encrypt(tmp_list, insert_data, insert_size, enc_key, front_link, back_link);
 
         // join tmp_list to list[index]
-        Node *prev_node = seekNode(list, block_index - 1);
-        Node *next_node = seekNode(list, block_index);
         Node *tmp_head_node = tmp_list->head->next;
         Node *tmp_tail_node = tmp_list->head->next;
         tmp_head_node->prev = prev_node;
