@@ -476,6 +476,7 @@ void insertion(List *list, unsigned char *input, int index, int insert_size, con
         list->tail->next = NULL;
 
         global_metadata = calloc(insert_size/12 + 1, sizeof(unsigned char));
+        update_metadata(global_metadata, insert_size);
     }
     else{
         global_metadata = decrypt_global_metadata(enc_global_metadata, filled_block_count, dec_key);
