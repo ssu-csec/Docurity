@@ -429,7 +429,7 @@ void deletion(List *list, int index, int size, const void *enc_key, const void *
         }
     }
 
-    encrypt_global_metadata(global_metadata, enc_global_metadata, enc_key);
+    encrypt_global_metadata(global_metadata, enc_global_metadata, list->count, enc_key);
     printf("free\t\t| global_metadata at %x\n", in);
     free(global_metadata);
     global_metadata = 0;
@@ -672,7 +672,7 @@ void insertion(List *list, unsigned char *input, int index, int insert_size, con
             new_metadata = 0;
         }
 
-    encrypt_global_metadata(global_metadata, enc_global_metadata, enc_key);
+    encrypt_global_metadata(global_metadata, enc_global_metadata, list->count, enc_key);
 
     printf("free\t\t| global_metadata at %x\n", in);
     free(global_metadata);
