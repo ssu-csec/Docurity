@@ -522,7 +522,7 @@ void delete_blocks(List *list, int first_block_num, int last_block_num, int boun
         Node *tail_block = list->tail->prev;
         list->head->next = new_head_block;
 
-        removeNode(list, first_block_num, deleted_blocks);
+        removeNodes(list, first_block_num, deleted_blocks);
 
         // The initial vector is at front link of head block and back link of tail block
         link_t ivec = get_link(tail_block, -1, dec_key);
