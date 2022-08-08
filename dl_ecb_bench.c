@@ -76,12 +76,15 @@ int main(int argc, char **argv)
 
     int is_data_read = 0;
     int index = 0;
+    int current_seek = 0;
     while(1)
     {
         // read operation
-        fgets(buffer, file_size, input_file);
-        if(strlen(buffer) == 0)
+        fseek(current_seek, 0, SEEK_CUR);
+        if(current_seek == SEEK_END)
             break;
+
+        fgets(buffer, file_size, input_file);
 
         strcpy(operation, buffer);
 
@@ -103,6 +106,8 @@ int main(int argc, char **argv)
             int length = atoi(buffer);
             deletion(cipherText, index, length, enc_key, dec_key, global_metadata);
         }
+
+        memset(buffer, 0, 1); //clear buffer
     }
 
     decrypt(result, cipherText, dec_key);
