@@ -110,12 +110,10 @@ void insert_global(unsigned char *global_metadata, unsigned char *metadata, int 
     int next_data_size = strlen(global_metadata) - index;
     int temp_size = next_data_size + metadata_size;
     unsigned char *temp = calloc(temp_size, sizeof(unsigned char));
-    printf("allocate\t| temp at %x\n", temp);
  
     memcpy(temp, metadata, metadata_size);
     memcpy(temp + metadata_size, global_metadata + index, next_data_size);
 
-    printf("free\t\t| temp at %x\n", temp);
     free(global_metadata);
     global_metadata = 0;
 
@@ -312,7 +310,6 @@ void deletion(List *list, int index, int size, const void *enc_key, const void *
                 Node *back_block = seekNode(list, last_block_num);
 
                 unsigned char *block_data = calloc(DATA_SIZE_IN_BLOCK, sizeof(unsigned char));
-                printf("allocate\t| block_data at %x\n", block_data);
 
                 front_link = get_link(front_block, -1, dec_key);
                 decrypt_block(back_block, NULL, &back_link, &bitmap, block_data, dec_key);
@@ -323,7 +320,6 @@ void deletion(List *list, int index, int size, const void *enc_key, const void *
                 replace_link(back_block, front_link, 0, enc_key, dec_key);
 
                 Node *new_node = calloc(1, sizeof(Node));
-                printf("allocate\t| new_node at %x\n", new_node);
 
                 encrypt_block(new_node, front_link, back_link, bitmap, block_data, enc_key);
 
@@ -344,7 +340,6 @@ void deletion(List *list, int index, int size, const void *enc_key, const void *
                 Node *bound_block = seekNode(list, bound_block_num);
 
                 unsigned char *block_data = calloc(DATA_SIZE_IN_BLOCK, sizeof(unsigned char));
-                printf("allocate\t| block_data at %x\n", block_data);
 
                 front_link = get_link(bound_block, 0, dec_key);
                 decrypt_block(front_block, NULL, &back_link, &bitmap, block_data, dec_key);
@@ -363,7 +358,6 @@ void deletion(List *list, int index, int size, const void *enc_key, const void *
                 replace_link(bound_block, front_link, 0, enc_key, dec_key);
 
                 Node *new_node = calloc(1, sizeof(Node));
-                printf("allocate\t| new_node at %x\n", new_node);
 
                 encrypt_block(new_node, front_link, back_link, bitmap, block_data, enc_key);
 
@@ -388,9 +382,7 @@ void deletion(List *list, int index, int size, const void *enc_key, const void *
                 Node *back_block = seekNode(list, last_block_num);
 
                 unsigned char *front_block_data = calloc(DATA_SIZE_IN_BLOCK, sizeof(unsigned char));
-                printf("allocate\t| front_block_data at %x\n", front_block_data);
                 unsigned char *back_block_data = calloc(DATA_SIZE_IN_BLOCK, sizeof(unsigned char));
-                printf("allocate\t| back_block_data at %x\n", back_block_data);
 
                 decrypt_block(front_block, &old_front_link, &back_link, &front_bitmap, front_block_data, dec_key);
                 decrypt_block(back_block, &front_link, &old_back_link, &back_bitmap, back_block_data, dec_key);
@@ -421,7 +413,6 @@ void deletion(List *list, int index, int size, const void *enc_key, const void *
     }
 
     encrypt_global_metadata(global_metadata, enc_global_metadata, list->count, enc_key);
-    printf("free\t\t| global_metadata at %x\n", global_metadata);
     free(global_metadata);
     global_metadata = 0;
 }
@@ -432,7 +423,6 @@ void deletion_single_block(List *list, int block_index, int index, int size, uns
     link_t front_link, back_link;
     bitmap_t bitmap;
     unsigned char *block_data = calloc(DATA_SIZE_IN_BLOCK, sizeof(unsigned char));
-    printf("allocate\t| block_data at %x\n", block_data);
 
     decrypt_block(block, &front_link, &back_link, &bitmap, block_data, dec_key);
 
@@ -559,12 +549,10 @@ void insertion(List *list, unsigned char *input, int index, int insert_size, con
     {
         encrypt(list, input, insert_size, enc_key, front_link, front_link);
         global_metadata = (unsigned char*)calloc(insert_size/DATA_SIZE_IN_BLOCK + 1, sizeof(unsigned char));
-        printf("allocate\t| global_metadata at %x\n", global_metadata);
         update_metadata(global_metadata, insert_size);
     }
     else{
         global_metadata = calloc(list->count, sizeof(unsigned char));
-        printf("allocate\t| global_metadata at %x\n", global_metadata);
 
         decrypt_global_metadata(global_metadata, enc_global_metadata, list->count, dec_key);
         unsigned char *insert_data;
@@ -590,17 +578,13 @@ void insertion(List *list, unsigned char *input, int index, int insert_size, con
             int block_front_size = index - start_point;
             int block_back_size = block_data_size - block_front_size;
             insert_data = calloc(insert_size + block_data_size, sizeof(unsigned char));
-            printf("allocate\t| insert_data at %x\n", insert_data);
 
             Node *block = seekNode(list, block_index);
 
             block_data = calloc(DATA_SIZE_IN_BLOCK, sizeof(unsigned char));
-            printf("allocate\t| block_data at %x\n", block_data);
             unsigned char *tmp_data = calloc(insert_size + block_data_size, sizeof(unsigned char));
-            printf("allocate\t| tmp_data at %x\n", tmp_data);
             decrypt_block(block, &front_link, &back_link, &bitmap, tmp_data, dec_key);
             copy_data(block_data, tmp_data, bitmap);
-            printf("free\t\t| tmp_data at %x\n", tmp_data);
             free(tmp_data);
             tmp_data = 0;
 
@@ -613,7 +597,6 @@ void insertion(List *list, unsigned char *input, int index, int insert_size, con
             memcpy(insert_point, input, insert_size);
             memcpy(insert_point + insert_size, block_data + block_front_size, block_back_size);
 
-            printf("free\t\t| block_data at %x\n", block_data);
             free(block_data);
             block_data = 0;
             delete_global(global_metadata, block_index, 1);
@@ -637,7 +620,6 @@ void insertion(List *list, unsigned char *input, int index, int insert_size, con
             replace_link(next_node, back_link, 0, enc_key, dec_key);
         }
             List *tmp_list = calloc(1, sizeof(List));
-            printf("allocate\t| tmp_list at %x\n", tmp_list);
             InitList(tmp_list);
     
             encrypt(tmp_list, insert_data, insert_size, enc_key, front_link, back_link);
@@ -652,17 +634,14 @@ void insertion(List *list, unsigned char *input, int index, int insert_size, con
             origin_tail->prev = tmp_tail_node;
             list->count += tmp_list->count;
     
-            printf("free\t\t| tmp_list at %x\n", tmp_list);
             free(tmp_list);
             tmp_list = 0;
 
             unsigned char *new_metadata = calloc(insert_size/DATA_SIZE_IN_BLOCK + 1, sizeof(unsigned char));
-            printf("allocate\t| new_metadata at %x\n", new_metadata);
 
             update_metadata(new_metadata, insert_size);
             insert_global(global_metadata, new_metadata, block_index);
 
-            printf("free\t\t| new_metadata at %x\n", new_metadata);
 
             free(new_metadata);
             new_metadata = 0;
@@ -670,7 +649,6 @@ void insertion(List *list, unsigned char *input, int index, int insert_size, con
 
     encrypt_global_metadata(global_metadata, enc_global_metadata, list->count, enc_key);
 
-    printf("free\t\t| global_metadata at %x\n", global_metadata);
     free(global_metadata);
     global_metadata = 0;
     //print_global_metadata(enc_global_metadata, list->count, dec_key);
@@ -679,7 +657,7 @@ void insertion(List *list, unsigned char *input, int index, int insert_size, con
 void encrypt_block(Node *node, link_t front_link, link_t back_link, bitmap_t bitmap, unsigned char *data,
                     const void *enc_key){
     unsigned char *tmp_data = calloc(1, sizeof(node->data));
-    printf("allocate\t| tmp_data at %x\n", tmp_data);
+
     int index = 0;
 
     tmp_data[index] = front_link;
@@ -694,7 +672,6 @@ void encrypt_block(Node *node, link_t front_link, link_t back_link, bitmap_t bit
     tmp_data[index] = back_link;
 
     AES_encrypt(tmp_data, &(node->data), enc_key);
-    printf("free\t\t| tmp_data at %x\n", tmp_data);
     free(tmp_data);
     tmp_data = 0;
 }
@@ -702,7 +679,6 @@ void encrypt_block(Node *node, link_t front_link, link_t back_link, bitmap_t bit
 void decrypt_block(Node *node, link_t *front_link, link_t *back_link, bitmap_t *bitmap, unsigned char *data,
                     const void *dec_key){
     unsigned char *tmp_data = calloc(1, sizeof(node->data));
-    printf("allocate\t| tmp_data at %x\n", tmp_data);
 
     AES_decrypt(&(node->data), tmp_data, dec_key);
 
@@ -721,7 +697,6 @@ void decrypt_block(Node *node, link_t *front_link, link_t *back_link, bitmap_t *
     if(data){
         memcpy(data, tmp_data + DATA_START, DATA_SIZE_IN_BLOCK);
     }
-    printf("free\t\t| tmp_data at %x\n", tmp_data);
     free(tmp_data);
     tmp_data = 0;
 }
@@ -747,7 +722,6 @@ unsigned char *get_data(Node *node, const void *dec_key){
     AES_decrypt(&(node->data), tmp_data, dec_key);
 
     unsigned char *data = calloc(DATA_SIZE_IN_BLOCK, sizeof(unsigned char));
-    printf("allocate\t| data at %x\n", data);
     memcpy(data, tmp_data[DATA_START], DATA_SIZE_IN_BLOCK);
     return data;
 }
@@ -807,11 +781,9 @@ int find_block_start(int index, int *block_index, unsigned char *global_metadata
 
 
 void free_node_safely(Node *prev_node, Node *next_node){
-    printf("free\t\t| prev_node at %x\n", prev_node);
     free(prev_node);
     prev_node = 0;
     if(prev_node != next_node){
-        printf("free\t\t| next_node at %x\n", next_node);
         free(next_node);
         next_node = 0;
     }
@@ -843,13 +815,11 @@ void unpacking_data(unsigned char *msg, Node *new_node, List *list)
     if(msg[1] == DELETE)
         {
             Node *node = calloc(1, sizeof(Node));
-            printf("allocate\t| node at %x\n", node);
             int index;
             memcpy(index, msg+2, sizeof(int));
             node = seekNode(list, index);
             node->next->prev = node->prev;
             node->prev->next = node->next;
-            printf("free\t\t| node at %x\n", node);
             free(node);
             node = 0;
         }
@@ -857,13 +827,11 @@ void unpacking_data(unsigned char *msg, Node *new_node, List *list)
         {
             memcpy(&(new_node->data), msg+6, AES_BLOCK_SIZE);
             Node *node = calloc(1, sizeof(Node));
-            printf("allocate\t| node at %x\n", node);
             int index;
             memcpy(&index, msg+2, sizeof(int));
             node = seekNode(list, index);
             node->prev = new_node;
             new_node->next = node;
-            printf("free\t\t| node at %x\n", node);
             free(node);
             node = 0;
         }
