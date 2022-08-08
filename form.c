@@ -506,25 +506,23 @@ void delete_after_all(List *list, int index, unsigned char *global_metadata,
 
 void delete_blocks(List *list, int first_block_num, int last_block_num, int bound_block_num,
                             unsigned char *global_metadata, const void *enc_key, const void *dec_key){
-    int deleted_blocks = bound_block_num > 0 ? bound_block_num - first_block_num : 0;
+    int deleted_blocks = bound_block_num > 0 ? bound_block_num - first_block_num : 1;
 
     if(first_block_num > 0){
-        link_t front_link = rand()%256;
-        link_t back_link = rand()%256;
         Node *front_block = seekNode(list, first_block_num - 1);
         Node *bound_block = seekNode(list, bound_block_num);
 
-        replace_link(front_block, front_link, -1, enc_key, dec_key);
-        replace_link(bound_block, back_link, 0, enc_key, dec_key);
+        link_t link = get_link(front_block, -1, dec_key);
+        replace_link(bound_block, link, 0, enc_key, dec_key);
 
-        removeNodes(list, first_block_num, last_block_num);
+        removeNodes(list, first_block_num, deleted_blocks);
     }
     else{   // from head of list to a block deleted
         Node *new_head_block = seekNode(list, bound_block_num);
         Node *tail_block = list->tail->prev;
         list->head->next = new_head_block;
 
-        removeNodes(list, first_block_num, last_block_num);
+        removeNode(list, first_block_num, deleted_blocks);
 
         // The initial vector is at front link of head block and back link of tail block
         link_t ivec = get_link(tail_block, -1, dec_key);
