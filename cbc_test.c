@@ -13,7 +13,7 @@ void cbc_encrypt(const unsigned char *in, List *out, size_t len, unsigned char *
 {
     unsigned char* tmp_data = calloc(BUFSIZE * 10, sizeof(unsigned char));
 
-    unsigned char* ivec_enc[16] = {0, };
+    unsigned char ivec_enc[16] = {0, };
     memcpy(ivec_enc, ivec, AES_BLOCK_SIZE);
 
     if((len % AES_BLOCK_SIZE) == 0)
@@ -35,19 +35,19 @@ void cbc_encrypt(const unsigned char *in, List *out, size_t len, unsigned char *
 
 void cbc_decrypt(List *in, unsigned char *out, unsigned char *ivec, const void *dec_key)
 {
-    unsigned char *data = calloc(in->count*AES_BLOCK_SIZE, sizeof(unsigned char));
-    unsigned char* tmp_data = data;
+    unsigned char *data = calloc(in->count * AES_BLOCK_SIZE, sizeof(unsigned char));
+    unsigned char *tmp_data = data;
 
-    unsigned char* ivec_dec[16] = {0, };
+    unsigned char ivec_dec[16] = {0, };
     memcpy(ivec_dec, ivec, AES_BLOCK_SIZE);
 
-    Node *tmp_node = calloc(1, sizeof(Node));
-    tmp_node = in->head;
+    Node *aes_block = calloc(1, sizeof(Node));
+    aes_block = in->head;
 
     for(int i = 0; i < in->count; i++)
     {
-        tmp_node = tmp_node->next;
-        memcpy(tmp_data, tmp_node->data, AES_BLOCK_SIZE);
+        aes_block = aes_block->next;
+        memcpy(tmp_data, aes_block->data, AES_BLOCK_SIZE);
         tmp_data += AES_BLOCK_SIZE;
     }
     
