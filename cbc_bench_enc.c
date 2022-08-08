@@ -102,25 +102,25 @@ int main(int argc, char **argv)
         if(strncmp(operation, "Insert", 6) == 0)
         {
             start = clock();
-            cbc_insert(buffer, cipherText, ivec, index, strlen(buffer), enc_key, dec_key);
+            cbc_insert(buffer, cipherText, &ivec, index, strlen(buffer), enc_key, dec_key);
             end = clock();
             cpu_time_used = ((double) (end - start)) / CLOCKS_PER_SEC;
             printf("%f\n", cpu_time_used);
         }
         else if(strncmp(operation, "Modify", 6) == 0)
         {
-            cbc_modify(buffer, cipherText, ivec, index, strlen(buffer), enc_key, dec_key);
+            cbc_modify(buffer, cipherText, &ivec, index, strlen(buffer), enc_key, dec_key);
         }
         else if(strncmp(operation, "Delete", 6) == 0)
         {
             int length = atoi(buffer);
-            cbc_delete(cipherText, ivec, index, length, enc_key, dec_key);
+            cbc_delete(cipherText, &ivec, index, length, enc_key, dec_key);
         }
 
         memset(buffer, 0, 1); //clear buffer
     }
 
-    cbc_decrypt(cipherText, result, ivec, dec_key);
+    cbc_decrypt(cipherText, result, &ivec, dec_key);
 
     return 0;
 }

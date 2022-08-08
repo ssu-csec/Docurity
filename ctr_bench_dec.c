@@ -68,7 +68,7 @@ int main(int argc, char **argv)
 
     clock_t start, end;
     double cpu_time_used;
-    
+
     int is_data_read = 0;
     int index = 0;
     long current_seek = 0;
@@ -97,26 +97,26 @@ int main(int argc, char **argv)
         if(strncmp(operation, "Insert", 6) == 0)
         {
             start = clock();
-            ctr_insert(buffer, cipherText, ivec, index, &last_num, strlen(buffer), enc_key);
+            ctr_insert(buffer, cipherText, &ivec, index, &last_num, strlen(buffer), enc_key);
             end = clock();
             cpu_time_used = ((double) (end - start)) / CLOCKS_PER_SEC;
             printf("%f\n", cpu_time_used);
         }
         else if(strncmp(operation, "Modify", 6) == 0)
         {
-            ctr_modify(buffer, cipherText, ivec, index, &last_num, strlen(buffer), enc_key);
+            ctr_modify(buffer, cipherText, &ivec, index, &last_num, strlen(buffer), enc_key);
         }
         else if(strncmp(operation, "Delete", 6) == 0)
         {
             int length = atoi(buffer);
-            ctr_delete(cipherText, ivec, index, length, &last_num, enc_key);
+            ctr_delete(cipherText, &ivec, index, length, &last_num, enc_key);
         }
 
         memset(buffer, 0, 1); //clear buffer
     }
 
     start = clock();
-    ctr_decrypt(cipherText, result, ivec, &last_num, enc_key);
+    ctr_decrypt(cipherText, result, &ivec, &last_num, enc_key);
     end = clock();
     cpu_time_used = ((double) (end - start)) / CLOCKS_PER_SEC;
     printf("%f\n", cpu_time_used);
