@@ -3,7 +3,7 @@ Tmpfile=$2
 Output=$3
 MAX_SIZE=$4
 Constant=${5:-0}
-Threshold=$((12+$Constant))
+Threshold=12
 Operation1="Insert"
 Operation2="Delete"
 Inversed_index=$(($MAX_SIZE-$Threshold))
@@ -13,13 +13,13 @@ rm $Tmpfile
 
 echo "${Operation1}" >> $Tmpfile
 echo "0" >> $Tmpfile
-./string_printer ${MAX_SIZE} >> $Tmpfile
+./string_printer $((${MAX_SIZE})) >> $Tmpfile
 for ((i=1; i<$MAX_SIZE+1; i++))
 do
 	echo "${Binary} ${i}" 
 	echo "${Operation2}" >> $Tmpfile
 	echo "$Inversed_index" >> $Tmpfile
-	echo "$Threshold" >> $Tmpfile
+	echo "$MAX_SIZE" >> $Tmpfile
 	Threshold=$(($Threshold * 2))
 	Inversed_index=$(($Inversed_index-$Threshold))
 
