@@ -580,6 +580,7 @@ void insertion(List *list, unsigned char *input, int index, int insert_size, con
             // 3. fill data into insert_data && bitmap
 
             unsigned char *block_data, *insert_point;
+            bitmap_t bitmap;
             int block_data_size = (int)global_metadata[block_index];
             int block_front_size = index - start_point;
             int block_back_size = block_data_size - block_front_size;
@@ -588,7 +589,10 @@ void insertion(List *list, unsigned char *input, int index, int insert_size, con
             Node *block = seekNode(list, block_index);
 
             block_data = calloc(DATA_SIZE_IN_BLOCK, sizeof(unsigned char));
-            decrypt_block(block, &front_link, &back_link, NULL, block_data, dec_key);
+            tmp_data = calloc(insert_size + block_data_size, sizeof(unsigned char));
+            decrypt_block(block, &front_link, &back_link, &bitmap, tmp_data, dec_key);
+            copy_data(block_data, tmp_data, bitmap);
+            free(tmp_data);
 
             removeNode(block);
             list->count--;
