@@ -44,6 +44,9 @@ int main()
     unsigned char result[BUFSIZE * 10];
     int index = 0;
 
+    // buffer fread from file(argv[1])
+    // 1. open file
+    // 2. fread to buffer if not EOF
 
     while(1)
     {
@@ -73,6 +76,7 @@ int main()
         }
 
         printf("list size: %d\n", cipherText->count);
+        print_global_metadata(global_meta, cipherText->count, dec_key);
 
 	    decrypt(result, cipherText, dec_key);
 	    printf("decrypted data : %s\n", result);
