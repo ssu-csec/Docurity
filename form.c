@@ -101,11 +101,12 @@ void print_global_metadata(const unsigned char *enc_global_metadata, size_t size
     printf("Global Metadata Map\n");
 
     for(int i = 0; i < size; i++){
-        if(i % 10 == 0){
+        if(i % 10 == 0 && i != 0){
             printf("\n");
         }
         printf("[%d]", global_metadata[i]);
     }
+    printf("\n");
 }
 
 void insert_global(unsigned char *global_metadata, unsigned char *metadata, int index)
@@ -603,6 +604,7 @@ void insertion(List *list, unsigned char *input, int index, int insert_size, con
         free(new_metadata);
     }
 
+    print_global_metadata(enc_global_metadata, list->count, dec_key);
     encrypt_global_metadata(global_metadata, enc_global_metadata, list->count, enc_key);
 }
 
