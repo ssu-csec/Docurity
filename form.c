@@ -598,6 +598,11 @@ void insertion(List *list, unsigned char *input, int index, int insert_size, con
             list->count += tmp_list->count;
     
             free(tmp_list);
+
+            unsigned char *new_metadata = calloc(insert_size/DATA_SIZE_IN_BLOCK + 1, sizeof(unsigned char));
+            update_metadata(new_metadata, insert_size);
+            insert_global(global_metadata, new_metadata, block_index);
+            free(new_metadata);
         }
         else{
             Node *prev_node = seekNode(list, block_index-1);
@@ -621,12 +626,12 @@ void insertion(List *list, unsigned char *input, int index, int insert_size, con
             list->count += tmp_list->count;
     
             free(tmp_list);
-        }
 
-        unsigned char *new_metadata = calloc(insert_size/DATA_SIZE_IN_BLOCK + 1, sizeof(unsigned char));
-        update_metadata(new_metadata, insert_size);
-        insert_global(global_metadata, new_metadata, block_index);
-        free(new_metadata);
+            unsigned char *new_metadata = calloc(insert_size/DATA_SIZE_IN_BLOCK + 1, sizeof(unsigned char));
+            update_metadata(new_metadata, insert_size);
+            insert_global(global_metadata, new_metadata, block_index);
+            free(new_metadata);
+        }
     }
 
     encrypt_global_metadata(global_metadata, enc_global_metadata, list->count, enc_key);
