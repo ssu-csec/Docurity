@@ -103,7 +103,6 @@ int main(int argc, char **argv)
         if(strncmp(operation, "Insert", 6) == 0)
         {
             insertion(cipherText, buffer, index, strlen(buffer), enc_key, dec_key, global_metadata);
-            return 0;
         }
         else if(strncmp(operation, "Delete", 6) == 0)
         {
