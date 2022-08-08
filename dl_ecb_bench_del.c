@@ -60,7 +60,7 @@ int main(int argc, char **argv)
     unsigned char cts128_test_key[16] = "Jeonsan-Gwan 539";
     AES_KEY *enc_key = gen_enc_key(cts128_test_key);
     AES_KEY *dec_key = gen_dec_key(cts128_test_key);
-    unsigned char ivec = gen_ivec();
+    unsigned char *ivec = gen_ivec();
 
     List *cipherText = (List *)calloc(1, sizeof(List));
     InitList(cipherText);
