@@ -80,10 +80,11 @@ int main(int argc, char **argv)
     {
         // read operation
         fgets(buffer, file_size, input_file);
+        if(strlen(buffer) == 0)
+            break;
+
         strcpy(operation, buffer);
 
-        if(strncmp(operation, "f", 1) == 0)
-            break;
 
         // read index
         fgets(buffer, file_size, input_file);
