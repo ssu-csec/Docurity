@@ -100,7 +100,7 @@ int main(int argc, char **argv)
         if(strncmp(operation, "Insert", 6) == 0)
         {
             start = clock();
-            cbc_insert(buffer, cipherText, &ivec, index, strlen(buffer), enc_key, dec_key);
+            cbc_insert(buffer, cipherText, &ivec, index+1, strlen(buffer), enc_key, dec_key);
             end = clock();
             cpu_time_used = ((double) (end - start)) / CLOCKS_PER_SEC;
             printf("%f\n", cpu_time_used);
