@@ -49,7 +49,7 @@ void removeNode(Node *this)
 }
 
 void removeNodes(List *list, int start, int size){
-    for(int block_num = start; block_num < end; block_num++)
+    for(int block_num = start; block_num < size; block_num++)
     {
         removeNode(seekNode(list, block_num));
     }
