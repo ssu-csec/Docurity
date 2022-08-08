@@ -591,6 +591,7 @@ void insertion(List *list, unsigned char *input, int index, int insert_size, con
             decrypt_block(block, &front_link, &back_link, NULL, block_data, dec_key);
 
             removeNode(block);
+            list->count--;
 
             insert_point = insert_data + block_front_size;
 
