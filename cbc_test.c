@@ -9,98 +9,98 @@
 #include "packet.h"
 #include "cbc_test.h"
 
-void cbc_encrypt(const unsigned char *in, List *out, size_t len, unsigned char *ivec, const void *enc_key)
+void cbc_encrypt(const unsigned char *input_data, List *list, size_t block_count, unsigned char *ivec, const void *enc_key)
 {
     unsigned char* tmp_data = calloc(BUFSIZE * 10, sizeof(unsigned char));
 
     unsigned char ivec_enc[16] = {0, };
     memcpy(ivec_enc, ivec, AES_BLOCK_SIZE);
 
-    if((len % AES_BLOCK_SIZE) == 0)
-        out->count = len / AES_BLOCK_SIZE;
+    if((block_count % AES_BLOCK_SIZE) == 0)
+        list->count = block_count / AES_BLOCK_SIZE;
     else
-        out->count = (len / AES_BLOCK_SIZE) + 1;
+        list->count = (block_count / AES_BLOCK_SIZE) + 1;
 
-    CRYPTO_cbc128_encrypt(in, tmp_data, len, enc_key, ivec_enc, (block128_f)AES_encrypt);
+    CRYPTO_cbc128_encrypt(input_data, tmp_data, block_count, enc_key, ivec_enc, (block128_f)AES_encrypt);
    
     Node *tmp_node = NULL;
-    for(int i = 0; i < out->count; i++)
+    for(int i = 0; i < list->count; i++)
     {
         tmp_node = calloc(1, sizeof(Node));
         memcpy(tmp_node->data, tmp_data, AES_BLOCK_SIZE);
-        insertNode(tmp_node, out->tail);
+        insertNode(tmp_node, list->tail);
         tmp_data += AES_BLOCK_SIZE;
     }
 }
 
-void cbc_decrypt(List *in, unsigned char *out, unsigned char *ivec, const void *dec_key)
+void cbc_decrypt(List *list, unsigned char *decrypt_data, unsigned char *ivec, const void *dec_key)
 {
-    unsigned char *data = calloc(in->count * AES_BLOCK_SIZE, sizeof(unsigned char));
+    unsigned char *data = calloc(list->count * AES_BLOCK_SIZE, sizeof(unsigned char));
     unsigned char *tmp_data = data;
 
     unsigned char ivec_dec[16] = {0, };
     memcpy(ivec_dec, ivec, AES_BLOCK_SIZE);
 
     Node *aes_block = calloc(1, sizeof(Node));
-    aes_block = in->head;
+    aes_block = list->head;
 
-    for(int i = 0; i < in->count; i++)
+    for(int i = 0; i < list->count; i++)
     {
         aes_block = aes_block->next;
         memcpy(tmp_data, aes_block->data, AES_BLOCK_SIZE);
         tmp_data += AES_BLOCK_SIZE;
     }
     
-    CRYPTO_cbc128_decrypt(data, out, (in->count) * AES_BLOCK_SIZE, dec_key, ivec_dec, (block128_f)AES_decrypt);
+    CRYPTO_cbc128_decrypt(data, decrypt_data, (list->count) * AES_BLOCK_SIZE, dec_key, ivec_dec, (block128_f)AES_decrypt);
 }
 
-void cbc_insert(unsigned char *in, List *out, unsigned char *ivec, int index, int ins_len, const void *enc_key, const void *dec_key)
+void cbc_insert(unsigned char *input, List *list, unsigned char *ivec, int index, int size, const void *enc_key, const void *dec_key)
 {
    
-    if(out->count == 0)
+    if(list->count == 0)
     {
-        unsigned char *data = calloc(ins_len, sizeof(unsigned char));
-        memcpy(data, in, ins_len);
-        cbc_encrypt(data, out, (ins_len/AES_BLOCK_SIZE + 1) * AES_BLOCK_SIZE, ivec, enc_key);
+        unsigned char *data = calloc(size, sizeof(unsigned char));
+        memcpy(data, input, size);
+        cbc_encrypt(data, list, (size/AES_BLOCK_SIZE + 1) * AES_BLOCK_SIZE, ivec, enc_key);
     }
     else
     {
-        unsigned char *tmp_data = calloc(out->count * AES_BLOCK_SIZE, sizeof(unsigned char));
-        cbc_decrypt(out, tmp_data, ivec, dec_key);
+        unsigned char *decrypt_data = calloc(list->count * AES_BLOCK_SIZE, sizeof(unsigned char));
+        cbc_decrypt(list, decrypt_data, ivec, dec_key);
 
-        unsigned char *new_data = calloc((out->count + (ins_len/AES_BLOCK_SIZE + 1)) * AES_BLOCK_SIZE, sizeof(unsigned char));
+        unsigned char *new_data = calloc((list->count + (size/AES_BLOCK_SIZE + 1)) * AES_BLOCK_SIZE, sizeof(unsigned char));
         
-        memcpy(new_data, tmp_data, index - 1);
-        memcpy(new_data + index - 1, in, ins_len);
-        memcpy(new_data + index + ins_len - 1, tmp_data + index - 1, out->count * AES_BLOCK_SIZE - index);
+        memcpy(new_data, decrypt_data, index - 1);
+        memcpy(new_data + index - 1, input, size);
+        memcpy(new_data + index + size - 1, decrypt_data + index - 1, list->count * AES_BLOCK_SIZE - index);
 
-        ResetList(out);
-        cbc_encrypt(new_data, out, strlen(new_data), ivec, enc_key);
+        ResetList(list);
+        cbc_encrypt(new_data, list, strlen(new_data), ivec, enc_key);
     }
 }
 
-void cbc_delete(List *out, unsigned char *ivec, int index, int del_len, const void *enc_key, const void *dec_key)
+void cbc_delete(List *list, unsigned char *ivec, int index, int del_len, const void *enc_key, const void *dec_key)
 {
-    unsigned char* tmp_data = calloc(out->count * AES_BLOCK_SIZE, sizeof(unsigned char));
-    cbc_decrypt(out, tmp_data, ivec, dec_key);
+    unsigned char* tmp_data = calloc(list->count * AES_BLOCK_SIZE, sizeof(unsigned char));
+    cbc_decrypt(list, tmp_data, ivec, dec_key);
 
-    unsigned char* new_data = calloc((out->count - (del_len/AES_BLOCK_SIZE)) * AES_BLOCK_SIZE, sizeof(unsigned char));
+    unsigned char* new_data = calloc((list->count - (del_len/AES_BLOCK_SIZE)) * AES_BLOCK_SIZE, sizeof(unsigned char));
     memcpy(new_data, tmp_data, index - 1);
     memcpy(new_data + index - 1, tmp_data + index + del_len - 1, strlen(tmp_data + index + del_len - 1));
 
-    ResetList(out);
+    ResetList(list);
 
-    cbc_encrypt(new_data, out, strlen(new_data), ivec, enc_key);
+    cbc_encrypt(new_data, list, strlen(new_data), ivec, enc_key);
 }
 
-void cbc_modify(unsigned char* in, List* out, unsigned char* ivec, int index, const void* enc_key, const void* dec_key)
+void cbc_modify(unsigned char* in, List* list, unsigned char* ivec, int index, const void* enc_key, const void* dec_key)
 {
-    unsigned char* tmp_data = calloc(out->count * AES_BLOCK_SIZE, sizeof(unsigned char));
-    cbc_decrypt(out, tmp_data, ivec, dec_key);
+    unsigned char* tmp_data = calloc(list->count * AES_BLOCK_SIZE, sizeof(unsigned char));
+    cbc_decrypt(list, tmp_data, ivec, dec_key);
 
     memcpy(tmp_data + index - 1, in, strlen(in));
 
-    ResetList(out);
+    ResetList(list);
 
-    cbc_encrypt(tmp_data, out, strlen(tmp_data), ivec, enc_key);
+    cbc_encrypt(tmp_data, list, strlen(tmp_data), ivec, enc_key);
 }
