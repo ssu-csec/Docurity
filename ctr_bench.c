@@ -52,7 +52,7 @@ int main(int argc, char **argv)
 
     unsigned char cts128_test_key[16] = "Jeonsan-Gwan 539";
     AES_KEY *enc_key = gen_enc_key(cts128_test_key);
-    unsigned char ivec = gen_ivec();
+    unsigned char *ivec = gen_ivec();
 
     List *cipherText = (List *)calloc(1, sizeof(List));
     InitList(cipherText);
@@ -95,7 +95,7 @@ int main(int argc, char **argv)
         if(strncmp(operation, "Insert", 6) == 0)
         {
             start = clock();
-            ctr_insert(buffer, cipherText, &ivec, index, &last_num, strlen(buffer), enc_key);
+            ctr_insert(buffer, cipherText, ivec, index, &last_num, strlen(buffer), enc_key);
             end = clock();
             cpu_time_used = ((double) (end - start)) / CLOCKS_PER_SEC;
             printf("%f\n", cpu_time_used);
@@ -103,7 +103,7 @@ int main(int argc, char **argv)
         else if(strncmp(operation, "Modify", 6) == 0)
         {
             start = clock();
-            ctr_modify(buffer, cipherText, &ivec, index, &last_num, strlen(buffer), enc_key);
+            ctr_modify(buffer, cipherText, ivec, index, &last_num, strlen(buffer), enc_key);
             end = clock();
             cpu_time_used = ((double) (end - start)) / CLOCKS_PER_SEC;
             printf("%f\n", cpu_time_used);
@@ -112,7 +112,7 @@ int main(int argc, char **argv)
         {
             int length = atoi(buffer);
             start = clock();
-            ctr_delete(cipherText, &ivec, index, length, &last_num, enc_key);
+            ctr_delete(cipherText, ivec, index, length, &last_num, enc_key);
             end = clock();
             cpu_time_used = ((double) (end - start)) / CLOCKS_PER_SEC;
             printf("%f\n", cpu_time_used);
@@ -121,7 +121,7 @@ int main(int argc, char **argv)
         memset(buffer, 0, 1); //clear buffer
     }
 
-    ctr_decrypt(cipherText, result, &ivec, &last_num, enc_key);
+    ctr_decrypt(cipherText, result, ivec, &last_num, enc_key);
 
     free(cipherText);
     free(result);
