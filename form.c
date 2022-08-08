@@ -88,12 +88,12 @@ unsigned char *decrypt_global_metadata(unsigned char *enc_global_metadata, size_
         link_back = tmp[15];
 
         for (int index = 0; index < LINKLESS_BLOCK_SIZE; index++){
-            metadata_ptr[index] = tmp[index + sizeof(link_t)];
+            *metadata_ptr = tmp[index + sizeof(link_t)];
+            metadata_ptr++;
         }
 
         aes_block_count -= AES_BLOCK_SIZE;
         enc_global_metadata += AES_BLOCK_SIZE;
-        metadata_ptr += LINKLESS_BLOCK_SIZE;
     }
 
     return global_metadata;
