@@ -60,7 +60,7 @@ ctr_bench_dec.o:	ctr_bench_dec.c
 	$(CC) -c -o	ctr_bench_dec.o	ctr_bench_dec.c	$(LDPATH) $(LDFLAGS) $(CFLAGS)
 
 
-string_printer: string_printer.c
+string_printer: ./scripts/string_printer.c
 	$(CC) -o ./scripts/string_printer ./scripts/string_printer.c
 
 
