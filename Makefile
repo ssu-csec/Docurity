@@ -6,8 +6,12 @@ LDFLAGS = -lssl -lcrypto -lpthread
 build: cbc_bench	ctr_bench	test
 
 bench: dl_ecb_bench	cbc_bench	ctr_bench
+	echo $@
+
+
 
 dl_ecb_bench: dl_ecb_bench_enc dl_ecb_bench_dec
+	echo $@
 
 dl_ecb_bench_enc:	node.o	form.o dl_ecb_bench_enc.o 
 	$(CC) -o	dl_ecb_bench_enc	node.o	form.o	dl_ecb_bench_enc.o	$(LDPATH) $(LDFLAGS) $(CFLAGS)
@@ -23,8 +27,8 @@ dl_ecb_bench_dec.o:	dl_ecb_bench_dec.c
 
 
 
-
 cbc_bench: cbc_bench_enc cbc_bench_dec
+	echo $@
 
 cbc_bench_enc:	node.o	cbc_test.o cbc_bench_enc.o 
 	$(CC) -o	cbc_bench_enc	node.o	cbc_test.o	cbc_bench_enc.o	$(LDPATH) $(LDFLAGS) $(CFLAGS)
@@ -40,8 +44,8 @@ cbc_bench_dec.o:	cbc_bench_dec.c
 
 
 
-
 ctr_bench: ctr_bench_enc ctr_bench_dec
+	echo $@
 
 ctr_bench_enc:	node.o	ctr_test.o ctr_bench_enc.o 
 	$(CC) -o	ctr_bench_enc	node.o	ctr_test.o	ctr_bench_enc.o	$(LDPATH) $(LDFLAGS) $(CFLAGS)
