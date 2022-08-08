@@ -57,10 +57,8 @@ int main(int argc, char **argv)
     List *cipherText = (List *)calloc(1, sizeof(List));
     InitList(cipherText);
 
-    int global_metadata_size = file_size;
-    int result_size = global_metadata_size * 12;
+    int result_size = file_size;
 
-    unsigned char *global_metadata = (unsigned char*)calloc(global_metadata_size, sizeof(unsigned char));
     unsigned char *result = (unsigned char*)calloc(result_size, sizeof(unsigned char));
 
     unsigned char *buffer = (unsigned char*)calloc(file_size, sizeof(unsigned char));
@@ -116,6 +114,10 @@ int main(int argc, char **argv)
     }
 
     ctr_decrypt(cipherText, result, &ivec, &last_num, enc_key);
+
+    free(cipherText);
+    free(result);
+    free(buffer);
 
     return 0;
 }
