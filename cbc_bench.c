@@ -52,6 +52,15 @@ int main()
             cpu_time_used = ((double) (end - start)) / CLOCKS_PER_SEC;
             printf("%f\n", cpu_time_used);
         }
+        else if(strncmp(inst, "Modify", 6) == 0)
+        {
+            scanf("%s", input);
+            start = clock();
+            cbc_modify(input, cipherText, ivec, index, strlen(input), enc_key, dec_key);
+            end = clock();
+            cpu_time_used = ((double) (end - start)) / CLOCKS_PER_SEC;
+            printf("%f\n", cpu_time_used);
+        }
         else if(strncmp(inst, "Delete", 6) == 0)
         {
             int length = 0;

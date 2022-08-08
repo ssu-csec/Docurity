@@ -93,3 +93,15 @@ void ctr_delete(List *out, unsigned char *ivec, int index, int del_len, unsigned
 
     ctr_encrypt(new_data, out, (strlen(new_data) / AES_BLOCK_SIZE + 1) * AES_BLOCK_SIZE, ivec, last_num, dec_key);
 }
+
+void ctr_modify(unsigned char* in, List* out, unsigned char* ivec, int index, unsigned int* last_num, const void* key)
+{
+    unsigned char* tmp_data = calloc(out->count * AES_BLOCK_SIZE, sizeof(unsigned char));
+    ctr_decrypt(out, tmp_data, ivec, last_num, key);
+
+    memcpy(tmp_data + index - 1, in, strlen(in));
+
+    ResetList(out);
+
+    ctr_encrypt(tmp_data, out, (strlen(tmp_data) / AES_BLOCK_SIZE + 1) * AES_BLOCK_SIZE, ivec, last_num, key);
+}

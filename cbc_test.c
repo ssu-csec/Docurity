@@ -92,3 +92,15 @@ void cbc_delete(List *out, unsigned char *ivec, int index, int del_len, const vo
 
     cbc_encrypt(new_data, out, strlen(new_data), ivec, enc_key);
 }
+
+void cbc_modify(unsigned char* in, List* out, unsigned char* ivec, int index, const void* enc_key, const void* dec_key)
+{
+    unsigned char* tmp_data = calloc(out->count * AES_BLOCK_SIZE, sizeof(unsigned char));
+    cbc_decrypt(out, tmp_data, ivec, dec_key);
+
+    memcpy(tmp_data + index - 1, in, strlen(in));
+
+    ResetList(out);
+
+    cbc_encrypt(tmp_data, out, strlen(tmp_data), ivec, enc_key);
+}
