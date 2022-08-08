@@ -278,7 +278,7 @@ void deletion(List *list, int index, int size, const void *enc_key, const void *
     }
 
     if(list->count == 1){
-        deletion_single_block(list, 0, size, global_metadata, enc_key, dec_key);
+        deletion_single_block(list, 0, index, size, global_metadata, enc_key, dec_key);
     }
     else if(delete_end >= total_size){
         delete_after_all(list, index, global_metadata, enc_key, dec_key);
@@ -294,132 +294,137 @@ void deletion(List *list, int index, int size, const void *enc_key, const void *
         int last_block_num = 0;
         int last_block_start = find_block_start(delete_end, &last_block_num, global_metadata);
 
-        // bound block
-        int bound_block_num = 0;
-        find_block_start(bound, &bound_block_num, global_metadata);
-
-        char delete_from_block_start = first_block_start == delete_start ? 1 : 0;
-        char delete_to_block_end = last_block_num != bound_block_num ? 1 : 0;
-
-        if(delete_from_block_start && delete_to_block_end)     // delete entire blocks
-        {
-            delete_blocks(list, first_block_num, last_block_num, bound_block_num, global_metadata, enc_key, dec_key);
+        if(first_block_num == last_block_num){
+            deletion_single_block(list, first_block_num, first_block_start, size, global_metadata, enc_key, dec_key);
         }
-        else if(delete_from_block_start && !delete_to_block_end)   // delete from a block to a part of the other block
-        {
-            int delete_count = 0;
-            int delete_size_in_block = size - last_block_start;
-            deleted_blocks = last_block_num - first_block_num - 1;  // save last block
+        else{
+            // bound block
+            int bound_block_num = 0;
+            find_block_start(bound, &bound_block_num, global_metadata);
 
-            Node *front_block = seekNode(list, first_block_num - 1);
-            Node *back_block = seekNode(list, last_block_num);
+            char delete_from_block_start = first_block_start == delete_start ? 1 : 0;
+            char delete_to_block_end = last_block_num != bound_block_num ? 1 : 0;
 
-            unsigned char *block_data = calloc(DATA_SIZE_IN_BLOCK, sizeof(unsigned char));
-
-            front_link = get_link(front_block, -1, dec_key);
-            decrypt_block(back_block, NULL, &back_link, &bitmap, block_data, dec_key);
-
-            int delete_data_size = delete_data_single_block(&bitmap, block_data, delete_size_in_block);
-
-            replace_link(front_block, back_link, -1, enc_key, dec_key);
-            replace_link(back_block, front_link, 0, enc_key, dec_key);
-
-            Node *new_node = calloc(1, sizeof(Node));
-
-            encrypt_block(new_node, front_link, back_link, bitmap, block_data, enc_key);
-
-            removeNodes(list, first_block_num, last_block_num);
-
-            insertNode(new_node, seekNode(list, first_block_num));
-
-            list->count -= deleted_blocks;
-            delete_global(global_metadata, first_block_num, deleted_blocks);
-        }
-        else if(!delete_from_block_start && delete_to_block_end)   // delete from a part of a block to the other block
-        {
-            int delete_count = 0;
-            int delete_start_in_block = delete_start - first_block_start;
-            deleted_blocks = last_block_num - first_block_num;  // save last block
-
-            Node *front_block = seekNode(list, first_block_num);
-            Node *bound_block = seekNode(list, bound_block_num);
-
-            unsigned char *block_data = calloc(DATA_SIZE_IN_BLOCK, sizeof(unsigned char));
-
-            front_link = get_link(bound_block, 0, dec_key);
-            decrypt_block(front_block, NULL, &back_link, &bitmap, block_data, dec_key);
-
-            bitmap_t check_bitmap = (bitmap_t) BITMAP_SEED >> delete_start_in_block;
-            for (int data_index = delete_start_in_block; data_index < DATA_SIZE_IN_BLOCK; data_index++){
-                if((bitmap & check_bitmap) != 0){
-                    block_data[data_index] = 0;
-                    bitmap = bitmap ^ check_bitmap;
-                    delete_count++;
-                }
-                check_bitmap = check_bitmap >> 1;
+            if(delete_from_block_start && delete_to_block_end)     // delete entire blocks
+            {
+                delete_blocks(list, first_block_num, last_block_num, bound_block_num, global_metadata, enc_key, dec_key);
             }
+            else if(delete_from_block_start && !delete_to_block_end)   // delete from a block to a part of the other block
+            {
+                int delete_count = 0;
+                int delete_size_in_block = size - last_block_start;
+                deleted_blocks = last_block_num - first_block_num - 1;  // save last block
 
-            replace_link(front_block, back_link, -1, enc_key, dec_key);
-            replace_link(bound_block, front_link, 0, enc_key, dec_key);
+                Node *front_block = seekNode(list, first_block_num - 1);
+                Node *back_block = seekNode(list, last_block_num);
 
-            Node *new_node = calloc(1, sizeof(Node));
+                unsigned char *block_data = calloc(DATA_SIZE_IN_BLOCK, sizeof(unsigned char));
 
-            encrypt_block(new_node, front_link, back_link, bitmap, block_data, enc_key);
+                front_link = get_link(front_block, -1, dec_key);
+                decrypt_block(back_block, NULL, &back_link, &bitmap, block_data, dec_key);
 
-            removeNodes(list, first_block_num + 1, bound_block_num);
+                int delete_data_size = delete_data_single_block(&bitmap, block_data, delete_size_in_block);
 
-            insertNode(new_node, seekNode(list, first_block_num));
+                replace_link(front_block, back_link, -1, enc_key, dec_key);
+                replace_link(back_block, front_link, 0, enc_key, dec_key);
 
-            list->count -= deleted_blocks;
-            global_metadata[first_block_num] -= delete_count;
-            delete_global(global_metadata, first_block_num + 1, deleted_blocks);
-        }
-        else                           // delete from a part of a block to a part of the other block
-        {
-            int delete_count = 0;
-            int delete_start_in_block = delete_start - first_block_start;
-            int delete_size_in_block = size - last_block_start;
-            deleted_blocks = last_block_num - first_block_num - 2;  // save first and last block
-            link_t old_front_link, old_back_link;
-            bitmap_t front_bitmap, back_bitmap, check_bitmap;
+                Node *new_node = calloc(1, sizeof(Node));
 
-            Node *front_block = seekNode(list, first_block_num - 1);
-            Node *back_block = seekNode(list, last_block_num);
+                encrypt_block(new_node, front_link, back_link, bitmap, block_data, enc_key);
 
-            unsigned char *front_block_data = calloc(DATA_SIZE_IN_BLOCK, sizeof(unsigned char));
-            unsigned char *back_block_data = calloc(DATA_SIZE_IN_BLOCK, sizeof(unsigned char));
+                removeNodes(list, first_block_num, last_block_num);
 
-            decrypt_block(front_block, &old_front_link, &back_link, &front_bitmap, front_block_data, dec_key);
-            decrypt_block(back_block, &front_link, &old_back_link, &back_bitmap, back_block_data, dec_key);
+                insertNode(new_node, seekNode(list, first_block_num));
 
-            check_bitmap = (bitmap_t) BITMAP_SEED >> delete_start_in_block;
-            for (int data_index = delete_start_in_block; data_index < DATA_SIZE_IN_BLOCK; data_index++){
-                if((front_bitmap & check_bitmap) != 0){
-                    front_block_data[data_index] = 0;
-                    front_bitmap = front_bitmap ^ check_bitmap;
-                    delete_count++;
-                }
-                check_bitmap = check_bitmap >> 1;
+                list->count -= deleted_blocks;
+                delete_global(global_metadata, first_block_num, deleted_blocks);
             }
+            else if(!delete_from_block_start && delete_to_block_end)   // delete from a part of a block to the other block
+            {
+                int delete_count = 0;
+                int delete_start_in_block = delete_start - first_block_start;
+                deleted_blocks = last_block_num - first_block_num;  // save last block
 
-            global_metadata[first_block_num] -= delete_count;
+                Node *front_block = seekNode(list, first_block_num);
+                Node *bound_block = seekNode(list, bound_block_num);
 
-            int delete_data_size = delete_data_single_block(&back_bitmap, back_block_data, delete_size_in_block);
+                unsigned char *block_data = calloc(DATA_SIZE_IN_BLOCK, sizeof(unsigned char));
 
-            encrypt_block(front_block, old_front_link, back_link, front_bitmap, front_block_data, enc_key);
-            encrypt_block(back_block, front_link, old_back_link, back_bitmap, back_block_data, enc_key);
+                front_link = get_link(bound_block, 0, dec_key);
+                decrypt_block(front_block, NULL, &back_link, &bitmap, block_data, dec_key);
 
-            removeNodes(list, first_block_num + 1, last_block_num);
+                bitmap_t check_bitmap = (bitmap_t) BITMAP_SEED >> delete_start_in_block;
+                for (int data_index = delete_start_in_block; data_index < DATA_SIZE_IN_BLOCK; data_index++){
+                    if((bitmap & check_bitmap) != 0){
+                        block_data[data_index] = 0;
+                        bitmap = bitmap ^ check_bitmap;
+                        delete_count++;
+                    }
+                    check_bitmap = check_bitmap >> 1;
+                }
 
-            list->count -= deleted_blocks;
-            delete_global(global_metadata, first_block_num, deleted_blocks);
+                replace_link(front_block, back_link, -1, enc_key, dec_key);
+                replace_link(bound_block, front_link, 0, enc_key, dec_key);
+
+                Node *new_node = calloc(1, sizeof(Node));
+
+                encrypt_block(new_node, front_link, back_link, bitmap, block_data, enc_key);
+
+                removeNodes(list, first_block_num + 1, bound_block_num);
+
+                insertNode(new_node, seekNode(list, first_block_num));
+
+                list->count -= deleted_blocks;
+                global_metadata[first_block_num] -= delete_count;
+                delete_global(global_metadata, first_block_num + 1, deleted_blocks);
+            }
+            else                           // delete from a part of a block to a part of the other block
+            {
+                int delete_count = 0;
+                int delete_start_in_block = delete_start - first_block_start;
+                int delete_size_in_block = size - last_block_start;
+                deleted_blocks = last_block_num - first_block_num - 2;  // save first and last block
+                link_t old_front_link, old_back_link;
+                bitmap_t front_bitmap, back_bitmap, check_bitmap;
+
+                Node *front_block = seekNode(list, first_block_num - 1);
+                Node *back_block = seekNode(list, last_block_num);
+
+                unsigned char *front_block_data = calloc(DATA_SIZE_IN_BLOCK, sizeof(unsigned char));
+                unsigned char *back_block_data = calloc(DATA_SIZE_IN_BLOCK, sizeof(unsigned char));
+
+                decrypt_block(front_block, &old_front_link, &back_link, &front_bitmap, front_block_data, dec_key);
+                decrypt_block(back_block, &front_link, &old_back_link, &back_bitmap, back_block_data, dec_key);
+
+                check_bitmap = (bitmap_t) BITMAP_SEED >> delete_start_in_block;
+                for (int data_index = delete_start_in_block; data_index < DATA_SIZE_IN_BLOCK; data_index++){
+                    if((front_bitmap & check_bitmap) != 0){
+                        front_block_data[data_index] = 0;
+                        front_bitmap = front_bitmap ^ check_bitmap;
+                        delete_count++;
+                    }
+                    check_bitmap = check_bitmap >> 1;
+                }
+
+                global_metadata[first_block_num] -= delete_count;
+
+                int delete_data_size = delete_data_single_block(&back_bitmap, back_block_data, delete_size_in_block);
+
+                encrypt_block(front_block, old_front_link, back_link, front_bitmap, front_block_data, enc_key);
+                encrypt_block(back_block, front_link, old_back_link, back_bitmap, back_block_data, enc_key);
+
+                removeNodes(list, first_block_num + 1, last_block_num);
+
+                list->count -= deleted_blocks;
+                delete_global(global_metadata, first_block_num, deleted_blocks);
+            }
         }
     }
 
     encrypt_global_metadata(global_metadata, enc_global_metadata, list->count, enc_key);
 }
 
-void deletion_single_block(List *list, int block_index, int size, unsigned char *global_metadata,
+void deletion_single_block(List *list, int block_index, int index, int size, unsigned char *global_metadata,
                             const void *enc_key, const void *dec_key){
     Node *block = seekNode(list, block_index);
     link_t front_link, back_link;
@@ -428,7 +433,7 @@ void deletion_single_block(List *list, int block_index, int size, unsigned char 
 
     decrypt_block(block, &front_link, &back_link, &bitmap, block_data, dec_key);
 
-    int delete_data_size = delete_data_single_block(&bitmap, block_data, size);
+    int delete_data_size = delete_data_single_block(&bitmap, block_data, index, size);
 
     if(bitmap == 0){
         removeNode(block);
@@ -441,7 +446,7 @@ void deletion_single_block(List *list, int block_index, int size, unsigned char 
     }
 }
 
-int delete_data_single_block(bitmap_t *bitmap, unsigned char *block_data, int size){
+int delete_data_single_block(bitmap_t *bitmap, unsigned char *block_data, int index, int size){
     int delete_count = 0;
     bitmap_t check_bitmap = (bitmap_t) BITMAP_SEED;
 
@@ -467,10 +472,11 @@ void delete_after_all(List *list, int index, unsigned char *global_metadata,
     // first block to be delete
     int first_block_num = 0;
     int first_block_start = find_block_start(index, &first_block_num, global_metadata);
+
     int deleted_blocks = list->count - first_block_num;
     int delete_data_size = index - first_block_start;
 
-    removeNodes(list, first_block_num + 1, list->count);
+    removeNodes(list, first_block_num + 1, deleted_blocks);
     delete_global(global_metadata, first_block_num + 1, deleted_blocks);
 
     deletion_single_block(list, first_block_start, delete_data_size, global_metadata, enc_key, dec_key);

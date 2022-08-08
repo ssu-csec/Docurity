@@ -29,10 +29,10 @@ void decrypt(unsigned char *dst, List *list, const void *dec_key);
 void deletion(List *list, int index, int size, const void *enc_key, const void *dec_key, 
                 unsigned char *enc_global_metadata);
 
-void deletion_single_block(List *list, int index, int size, unsigned char *global_metadata,
+void deletion_single_block(List *list, int block_index, int index, int size, unsigned char *global_metadata,
                             const void *enc_key, const void *dec_key);
 
-int delete_data_single_block(bitmap_t *bitmap, unsigned char *block_data, int size);
+int delete_data_single_block(bitmap_t *bitmap, unsigned char *block_data, int index, int size);
 
 void delete_after_all(List *list, int index, unsigned char *global_metadata,
                         const void *enc_key, const void *dec_key);
