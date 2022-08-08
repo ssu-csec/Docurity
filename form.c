@@ -589,7 +589,7 @@ void insertion(List *list, unsigned char *input, int index, int insert_size, con
             Node *block = seekNode(list, block_index);
 
             block_data = calloc(DATA_SIZE_IN_BLOCK, sizeof(unsigned char));
-            tmp_data = calloc(insert_size + block_data_size, sizeof(unsigned char));
+            unsigned char *tmp_data = calloc(insert_size + block_data_size, sizeof(unsigned char));
             decrypt_block(block, &front_link, &back_link, &bitmap, tmp_data, dec_key);
             copy_data(block_data, tmp_data, bitmap);
             free(tmp_data);
