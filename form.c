@@ -576,15 +576,16 @@ void insertion(List *list, unsigned char *input, int index, int insert_size, con
             insert_size += block_data_size;
         }
 
+        Node *prev_node, next_node, origin_tail;
         if(start_point < 0){
-            Node *prev_node = seekNode(list, block_index-1);
-            Node *next_node = seekNode(list, 0);
-            Node *origin_tail = list->tail;
+            prev_node = seekNode(list, block_index-1);
+            next_node = seekNode(list, 0);
+            origin_tail = list->tail;
         }
         else{
-            Node *prev_node = seekNode(list, block_index-1);
-            Node *next_node = seekNode(list, block_index);
-            Node *origin_tail = next_node;
+            prev_node = seekNode(list, block_index-1);
+            next_node = seekNode(list, block_index);
+            origin_tail = next_node;
         }
             replace_link(prev_node, front_link, -1, enc_key, dec_key);
             replace_link(next_node, back_link, 0, enc_key, dec_key);
