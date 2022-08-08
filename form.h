@@ -11,7 +11,7 @@
 
 void encrypt_global_metadata(unsigned char *in, unsigned char *out, size_t size, const void *enc_key);
 
-void decrypt_global_metadata(unsigned char *global_metadata, unsigned char *enc_global_metadata, const void *dec_key);
+void decrypt_global_metadata(unsigned char *global_metadata, unsigned char *enc_global_metadata, size_t size, const void *dec_key);
 
 void print_global_metadata(unsigned char *enc_global_metadata, size_t size, const void *dec_key);
 

@@ -55,7 +55,7 @@ void encrypt_global_metadata(unsigned char *in, unsigned char *out, size_t size,
     }
 }
 
-void decrypt_global_metadata(unsigned char *global_metadata, unsigned char *enc_global_metadata, const void *dec_key)
+void decrypt_global_metadata(unsigned char *global_metadata, unsigned char *enc_global_metadata, size_t size, const void *dec_key)
 {
     unsigned char tmp[AES_BLOCK_SIZE] = {0, };
     unsigned char *metadata_ptr = global_metadata;
@@ -270,7 +270,7 @@ void deletion(List *list, int index, int size, const void *enc_key, const void *
     bitmap_t bitmap = 0;
 
     unsigned char *global_metadata = calloc(list->count, sizeof(unsigned char));
-    decrypt_global_metadata(global_metadata, enc_global_metadata, dec_key);
+    decrypt_global_metadata(global_metadata, enc_global_metadata, list->count, dec_key);
 
     int total_size = 0;
 
@@ -575,7 +575,7 @@ void insertion(List *list, unsigned char *input, int index, int insert_size, con
         global_metadata = calloc(list->count, sizeof(unsigned char));
         printf("allocate\t| global_metadata at %x\n", global_metadata);
 
-        decrypt_global_metadata(global_metadata, enc_global_metadata, dec_key);
+        decrypt_global_metadata(global_metadata, enc_global_metadata, list->count, dec_key);
         unsigned char *insert_data;
 
         int start_point = find_block_start(index, &block_index, global_metadata);
