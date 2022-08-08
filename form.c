@@ -579,35 +579,13 @@ void insertion(List *list, unsigned char *input, int index, int insert_size, con
         if(start_point < 0){
             Node *prev_node = seekNode(list, block_index-1);
             Node *next_node = seekNode(list, 0);
-    
-            replace_link(prev_node, front_link, -1, enc_key, dec_key);
-            replace_link(next_node, back_link, 0, enc_key, dec_key);
-    
-            List *tmp_list = calloc(1, sizeof(List));
-            InitList(tmp_list);
-    
-            encrypt(tmp_list, insert_data, insert_size, enc_key, front_link, back_link);
-    
-            // join tmp_list to list[index]
-            Node *tmp_head_node = tmp_list->head->next;
-            Node *tmp_tail_node = tmp_list->tail->prev;
-            tmp_head_node->prev = prev_node;
-            tmp_tail_node->next = next_node;
-            prev_node->next = tmp_head_node;
-            list->tail->prev = tmp_tail_node;
-            list->count += tmp_list->count;
-    
-            free(tmp_list);
-
-            unsigned char *new_metadata = calloc(insert_size/DATA_SIZE_IN_BLOCK + 1, sizeof(unsigned char));
-            update_metadata(new_metadata, insert_size);
-            insert_global(global_metadata, new_metadata, block_index);
-            free(new_metadata);
+            Node *origin_tail = list->tail;
         }
         else{
             Node *prev_node = seekNode(list, block_index-1);
             Node *next_node = seekNode(list, block_index);
-    
+            Node *origin_tail = next_node;
+        }
             replace_link(prev_node, front_link, -1, enc_key, dec_key);
             replace_link(next_node, back_link, 0, enc_key, dec_key);
     
@@ -615,14 +593,13 @@ void insertion(List *list, unsigned char *input, int index, int insert_size, con
             InitList(tmp_list);
     
             encrypt(tmp_list, insert_data, insert_size, enc_key, front_link, back_link);
-    
             // join tmp_list to list[index]
             Node *tmp_head_node = tmp_list->head->next;
             Node *tmp_tail_node = tmp_list->tail->prev;
             tmp_head_node->prev = prev_node;
-            tmp_tail_node->next = next_node;
+            tmp_tail_node->next = origin_tail;
             prev_node->next = tmp_head_node;
-            next_node->prev = tmp_tail_node;
+            origin_tail->prev = tmp_tail_node;
             list->count += tmp_list->count;
     
             free(tmp_list);
@@ -632,7 +609,6 @@ void insertion(List *list, unsigned char *input, int index, int insert_size, con
             insert_global(global_metadata, new_metadata, block_index);
             free(new_metadata);
         }
-    }
 
     encrypt_global_metadata(global_metadata, enc_global_metadata, list->count, enc_key);
     print_global_metadata(enc_global_metadata, list->count, dec_key);
