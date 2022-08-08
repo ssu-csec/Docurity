@@ -95,8 +95,27 @@ unsigned char *decrypt_global_metadata(const unsigned char *enc_global_metadata,
     return global_metadata;
 }
 
+void print_global_metadata(const unsigned char *enc_global_metadata, size_t size, const void *dec_key){
+    unsigned char *global_metadata = decrypt_global_metadata(enc_global_metadata, size, dec_key);
+
+    printf("Global Metadata Map\n");
+
+    for(int i = 0; i < size; i++){
+        if(i % 10 == 0){
+            printf("\n");
+        }
+        printf("[%d]", global_metadata[i]);
+    }
+}
+
 void insert_global(unsigned char *global_metadata, unsigned char *metadata, int index)
 {
+    // [global metadata] [delete] [next metadata]
+    // e.g. 0 1 ... 6 7, index: 3, metadata: 8...9, 3 push 2(size of metadata) back
+    // metadata: 8...9, index: 3
+    // next_data_size = 8 - 3 = 5
+    // temp_size = 5 + 2 = 7
+
     int metadata_size = strlen(metadata);
     int next_data_size = strlen(global_metadata) - index;
     int temp_size = next_data_size + metadata_size;
@@ -112,13 +131,20 @@ void insert_global(unsigned char *global_metadata, unsigned char *metadata, int 
 
 void delete_global(unsigned char *global_metadata, int index, int size)
 {
-    int global_metadata_size = strlen(global_metadata);
+    // [global metadata] [delete] [next metadata]
+    // e.g. 0 1 ... 6 7, delete: 3 ~ 5, 0~2 leave, 6~7 pull into front
+    // index: 3, size: 3
+    // delete_position = (void *) &0 + index = &3
+    // next_data_start = delete_position + size = &6
+    // next_data_size = 8 - (3+3) = 2
+
     unsigned char *delete_position = global_metadata + index;
     unsigned char *next_data_start = delete_position + size;
+    int global_metadata_size = strlen(global_metadata);
     int next_data_size = global_metadata_size - (index + size);
 
     memcpy(delete_position, next_data_start, next_data_size);
-    memset(global_metadata + global_metadata_size - 1, 0, size);      // clear moved data
+    memset(delete_position + next_data_size, 0, size);      // clear moved data
 }
 
 void update_metadata(unsigned char *global_metadata, int insert_size){
@@ -131,7 +157,6 @@ void update_metadata(unsigned char *global_metadata, int insert_size){
 
     global_metadata[index] = insert_size % DATA_SIZE_IN_BLOCK;
 }
-
 
 void encrypt(List *list, const unsigned char *input, size_t size, const void *enc_key,
                 link_t front_ivec, link_t back_ivec)
@@ -485,6 +510,12 @@ void delete_blocks(List *list, int first_block_num, int last_block_num, int boun
 void insertion(List *list, unsigned char *input, int index, int insert_size, const void *enc_key, const void *dec_key, 
                 unsigned char *enc_global_metadata)                                                                      
 {
+    // find block to be inserted
+    // copy original data
+    // make nodes
+    // link prev - new_nodes - next
+    // update global metadata
+
     srand(time(NULL));
 
     link_t front_link = rand() % 256;
@@ -492,17 +523,16 @@ void insertion(List *list, unsigned char *input, int index, int insert_size, con
     unsigned char *global_metadata, *insert_data;
 
     int block_index = 0;
-    int filled_block_count = list->count;
 
     // First time of insertion
-    if(index == 0 && filled_block_count == 0)
+    if(index == 0 && list->count == 0)
     {
         encrypt(list, input, insert_size, enc_key, front_link, front_link);
         global_metadata = calloc(insert_size/DATA_SIZE_IN_BLOCK + 1, sizeof(unsigned char));
         update_metadata(global_metadata, insert_size);
     }
     else{
-        global_metadata = decrypt_global_metadata(enc_global_metadata, filled_block_count, dec_key);
+        global_metadata = decrypt_global_metadata(enc_global_metadata, list->count, dec_key);
         memset(enc_global_metadata, 0, BUFSIZE);        // clear original global metadata
 
         int start_point = find_block_start(index, &block_index, global_metadata);

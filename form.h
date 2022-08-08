@@ -13,6 +13,8 @@ void encrypt_global_metadata(const unsigned char *in, unsigned char *out, size_t
 
 unsigned char *decrypt_global_metadata(const unsigned char *enc_global_metadata, size_t size, const void *dec_key);
 
+void print_global_metadata(const unsigned char *enc_global_metadata, size_t size, const void *dec_key);
+
 void insert_global(unsigned char *global_metadata, unsigned char *metadata, int index);
 
 void delete_global(unsigned char *global_metadata, int index, int size);
