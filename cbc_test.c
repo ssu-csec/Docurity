@@ -11,8 +11,6 @@
 
 void cbc_encrypt(const unsigned char *input_data, List *list, size_t block_count, unsigned char *ivec, const void *enc_key)
 {
-    unsigned char* tmp_data = calloc(BUFSIZE * 10, sizeof(unsigned char));
-
     unsigned char ivec_enc[16] = {0, };
     memcpy(ivec_enc, ivec, AES_BLOCK_SIZE);
 
@@ -21,22 +19,25 @@ void cbc_encrypt(const unsigned char *input_data, List *list, size_t block_count
     else
         list->count = (block_count / AES_BLOCK_SIZE) + 1;
 
-    CRYPTO_cbc128_encrypt(input_data, tmp_data, block_count, enc_key, ivec_enc, (block128_f)AES_encrypt);
-   
-    Node *tmp_node = NULL;
+    unsigned char* encrypt_data = calloc(block_count * AES_BLOCK_SIZE, sizeof(unsigned char));
+    CRYPTO_cbc128_encrypt(input_data, encrypt_data, block_count, enc_key, ivec_enc, (block128_f)AES_encrypt);
+
+    unsigned char *node_data = calloc(AES_BLOCK_SIZE, sizeof(unsigned char));
+
     for(int i = 0; i < list->count; i++)
     {
-        tmp_node = calloc(1, sizeof(Node));
-        memcpy(tmp_node->data, tmp_data, AES_BLOCK_SIZE);
-        insertNode(tmp_node, list->tail);
-        tmp_data += AES_BLOCK_SIZE;
+        memcpy(node_data, encrypt_data, AES_BLOCK_SIZE);
+        insertNode(createNode(node_data), list->tail);
+        encrypt_data += AES_BLOCK_SIZE;
     }
+
+    free(node_data)
 }
 
 void cbc_decrypt(List *list, unsigned char *decrypt_data, unsigned char *ivec, const void *dec_key)
 {
     unsigned char *data = calloc(list->count * AES_BLOCK_SIZE, sizeof(unsigned char));
-    unsigned char *tmp_data = data;
+    unsigned char *data_ptr = data;
 
     unsigned char ivec_dec[16] = {0, };
     memcpy(ivec_dec, ivec, AES_BLOCK_SIZE);
@@ -47,11 +48,12 @@ void cbc_decrypt(List *list, unsigned char *decrypt_data, unsigned char *ivec, c
     for(int i = 0; i < list->count; i++)
     {
         aes_block = aes_block->next;
-        memcpy(tmp_data, aes_block->data, AES_BLOCK_SIZE);
-        tmp_data += AES_BLOCK_SIZE;
+        memcpy(data_ptr, aes_block->data, AES_BLOCK_SIZE);
+        data_ptr += AES_BLOCK_SIZE;
     }
     
     CRYPTO_cbc128_decrypt(data, decrypt_data, (list->count) * AES_BLOCK_SIZE, dec_key, ivec_dec, (block128_f)AES_decrypt);
+    free(data);
 }
 
 void cbc_insert(unsigned char *input, List *list, unsigned char *ivec, int index, int size, const void *enc_key, const void *dec_key)
@@ -78,6 +80,12 @@ void cbc_insert(unsigned char *input, List *list, unsigned char *ivec, int index
         cbc_encrypt(new_data, list, strlen(new_data), ivec, enc_key);
     }
 }
+
+
+
+
+
+
 
 void cbc_delete(List *list, unsigned char *ivec, int index, int del_len, const void *enc_key, const void *dec_key)
 {
