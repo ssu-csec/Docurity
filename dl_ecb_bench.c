@@ -76,12 +76,12 @@ int main(int argc, char **argv)
 
     int is_data_read = 0;
     int index = 0;
-    int current_seek = 0;
+    long current_seek = 0;
     while(1)
     {
         // read operation
         current_seek = ftell(input_file);
-        if(current_seek == SEEK_END)
+        if(current_seek == file_size)
             break;
 
         fgets(buffer, file_size, input_file);
