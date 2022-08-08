@@ -65,11 +65,9 @@ int main(int argc, char **argv)
     List *cipherText = (List *)calloc(1, sizeof(List));
     InitList(cipherText);
 
-    int global_metadata_size = file_size;
-    int result_size = global_metadata_size * 12;
+    int global_metadata_size = file_size * 8 / 7;
 
     unsigned char *global_metadata = (unsigned char*)calloc(global_metadata_size, sizeof(unsigned char));
-    unsigned char *result = (unsigned char*)calloc(result_size, sizeof(unsigned char));
 
     unsigned char *buffer = (unsigned char*)calloc(file_size, sizeof(unsigned char));
     unsigned char operation[10] = {0, };
@@ -117,6 +115,8 @@ int main(int argc, char **argv)
         memset(buffer, 0, 1); //clear buffer
     }
 
+    int result_size = global_metadata_size * 12;
+    unsigned char *result = (unsigned char*)calloc(result_size, sizeof(unsigned char));
     decrypt(result, cipherText, dec_key);
 
     return 0;

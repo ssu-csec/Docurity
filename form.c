@@ -63,6 +63,7 @@ void decrypt_global_metadata(unsigned char *global_metadata, unsigned char *enc_
     int first_check = aes_block_count;
     link_t link_front = 0;
     link_t link_back = 0;
+    unsigned char *in_ptr = enc_global_metadata;
 
     if (aes_block_count % AES_BLOCK_SIZE != 0)
     {
@@ -71,7 +72,7 @@ void decrypt_global_metadata(unsigned char *global_metadata, unsigned char *enc_
     }
 
     while (aes_block_count) {
-        AES_decrypt(enc_global_metadata, tmp, dec_key);
+        AES_decrypt(in_ptr, tmp, dec_key);
 
         link_front = tmp[0];
 
@@ -89,7 +90,7 @@ void decrypt_global_metadata(unsigned char *global_metadata, unsigned char *enc_
         }
 
         aes_block_count -= AES_BLOCK_SIZE;
-        enc_global_metadata += AES_BLOCK_SIZE;
+        in_ptr += AES_BLOCK_SIZE;
     }
 }
 
