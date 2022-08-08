@@ -323,7 +323,7 @@ void deletion(List *list, int index, int size, const void *enc_key, const void *
                 front_link = get_link(front_block, -1, dec_key);
                 decrypt_block(back_block, NULL, &back_link, &bitmap, block_data, dec_key);
 
-                int delete_data_size = delete_data_single_block(&bitmap, block_data, delete_size_in_block);
+                int delete_data_size = delete_data_single_block(&bitmap, block_data, 0, delete_size_in_block);
 
                 replace_link(front_block, back_link, -1, enc_key, dec_key);
                 replace_link(back_block, front_link, 0, enc_key, dec_key);
@@ -408,7 +408,7 @@ void deletion(List *list, int index, int size, const void *enc_key, const void *
 
                 global_metadata[first_block_num] -= delete_count;
 
-                int delete_data_size = delete_data_single_block(&back_bitmap, back_block_data, delete_size_in_block);
+                int delete_data_size = delete_data_single_block(&back_bitmap, back_block_data, 0, delete_size_in_block);
 
                 encrypt_block(front_block, old_front_link, back_link, front_bitmap, front_block_data, enc_key);
                 encrypt_block(back_block, front_link, old_back_link, back_bitmap, back_block_data, enc_key);
@@ -470,16 +470,30 @@ int delete_data_single_block(bitmap_t *bitmap, unsigned char *block_data, int in
 void delete_after_all(List *list, int index, unsigned char *global_metadata,
                         const void *enc_key, const void *dec_key){
     // first block to be delete
+    // [1 2 3 4 5 6 7 8 9 A B C] [D E F]
+    // [1 2 3]
+    // index = 3
+    // delete_start_index = 3
+    // delete_data_size = 12 - 3
+
+    // [1 2 / 4 5 / 7 8 / A B C] [D E F]
+    // [1 2 / 4]
+    // index = 3
+    // delete_start_index = 3
+    // delete_data_size = 9 - 3
+
+
     int first_block_num = 0;
     int first_block_start = find_block_start(index, &first_block_num, global_metadata);
 
     int deleted_blocks = list->count - first_block_num;
-    int delete_data_size = index - first_block_start;
+    int delete_start_index = index - first_block_start
+    int delete_data_size = global_metadata[first_block_num] - delete_start_index;
 
     removeNodes(list, first_block_num + 1, deleted_blocks);
     delete_global(global_metadata, first_block_num + 1, deleted_blocks);
 
-    deletion_single_block(list, first_block_start, delete_data_size, global_metadata, enc_key, dec_key);
+    deletion_single_block(list, first_block_num, delete_start_index, delete_data_size, global_metadata, enc_key, dec_key);
 }
 
 void delete_blocks(List *list, int first_block_num, int last_block_num, int bound_block_num,
