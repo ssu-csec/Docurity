@@ -9,7 +9,7 @@
 #include "form.h"
 #include "packet.h"
 
-void encrypt_global_metadata(const const unsigned char *in, unsigned char *out, size_t size, const void *enc_key)
+void encrypt_global_metadata(unsigned char *in, unsigned char *out, size_t size, const void *enc_key)
 {
     srand(time(NULL));
     int index = 0;
@@ -52,9 +52,10 @@ void encrypt_global_metadata(const const unsigned char *in, unsigned char *out, 
         in += LINKLESS_BLOCK_SIZE;
         out += AES_BLOCK_SIZE;
     }
+    free(in);
 }
 
-unsigned char *decrypt_global_metadata(const unsigned char *enc_global_metadata, size_t size, const void *dec_key)
+unsigned char *decrypt_global_metadata(unsigned char *enc_global_metadata, size_t size, const void *dec_key)
 {
     unsigned char tmp[AES_BLOCK_SIZE] = {0, };
     unsigned char *global_metadata = calloc(size, sizeof(unsigned char));
@@ -95,7 +96,7 @@ unsigned char *decrypt_global_metadata(const unsigned char *enc_global_metadata,
     return global_metadata;
 }
 
-void print_global_metadata(const unsigned char *enc_global_metadata, size_t size, const void *dec_key){
+void print_global_metadata(unsigned char *enc_global_metadata, size_t size, const void *dec_key){
     unsigned char *global_metadata = decrypt_global_metadata(enc_global_metadata, size, dec_key);
 
     printf("Global Metadata Map\n");
