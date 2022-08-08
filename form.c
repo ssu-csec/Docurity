@@ -130,10 +130,10 @@ void insert_global(unsigned char *global_metadata, unsigned char *metadata, int 
     memcpy(temp, metadata, metadata_size);
     memcpy(temp + metadata_size, global_metadata + index, next_data_size);
 
-    memcpy(global_metadata + index, temp, temp_size);       // Overwrite origin global metadata
-
     printf("free\t\t| temp at %x\n", temp);
-    free(temp);
+    free(global_metadata);
+
+    global_metadata = tmp;
 }
 
 void delete_global(unsigned char *global_metadata, int index, int size)
@@ -560,7 +560,7 @@ void insertion(List *list, unsigned char *input, int index, int insert_size, con
 
     link_t front_link = rand() % 256;
     link_t back_link = rand() % 256;
-    unsigned char *global_metadata, *insert_data;
+    unsigned char *global_metadata;
 
     int block_index = 0;
 
@@ -568,7 +568,7 @@ void insertion(List *list, unsigned char *input, int index, int insert_size, con
     if(index == 0 && list->count == 0)
     {
         encrypt(list, input, insert_size, enc_key, front_link, front_link);
-        global_metadata = calloc(insert_size/DATA_SIZE_IN_BLOCK + 1, sizeof(unsigned char));
+        global_metadata = (unsigned char*)calloc(insert_size/DATA_SIZE_IN_BLOCK + 1, sizeof(unsigned char));
         printf("allocate\t| global_metadata at %x\n", global_metadata);
         update_metadata(global_metadata, insert_size);
     }
@@ -581,10 +581,7 @@ void insertion(List *list, unsigned char *input, int index, int insert_size, con
 
         if(is_block_start)  // allocate new block
         {
-            insert_data = calloc(insert_size, sizeof(unsigned char));
-            printf("allocate\t| insert_data at %x\n", insert_data);
-            // Copy data we want to insert
-            memcpy(insert_data, input, insert_size);
+            insert_data = input;
         }
         else                // index is located in the middle of one block
         {
