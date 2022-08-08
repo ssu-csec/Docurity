@@ -107,12 +107,12 @@ int main(int argc, char **argv)
         }
         else if(strncmp(operation, "Modify", 6) == 0)
         {
-            cbc_modify(buffer, cipherText, ivec, index, strlen(buffer), enc_key, dec_key);
+            cbc_modify(buffer, cipherText, ivec, index+1, strlen(buffer), enc_key, dec_key);
         }
         else if(strncmp(operation, "Delete", 6) == 0)
         {
             int length = atoi(buffer);
-            cbc_delete(cipherText, ivec, index, length, enc_key, dec_key);
+            cbc_delete(cipherText, ivec, index+1, length, enc_key, dec_key);
         }
 
         memset(buffer, 0, 1); //clear buffer
