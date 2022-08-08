@@ -497,6 +497,7 @@ void delete_after_all(List *list, int index, unsigned char *global_metadata,
         int deleted_blocks = list->count - (first_block_num + 1);
 
         removeNodes(list, first_block_num + 1, deleted_blocks);
+        list->count -= deleted_blocks;
         delete_global(global_metadata, first_block_num + 1, deleted_blocks);
     }
 
