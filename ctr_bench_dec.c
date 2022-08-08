@@ -66,6 +66,9 @@ int main(int argc, char **argv)
     unsigned char *buffer = (unsigned char*)calloc(file_size, sizeof(unsigned char));
     unsigned char operation[10] = {0, };
 
+    clock_t start, end;
+    double cpu_time_used;
+    
     int is_data_read = 0;
     int index = 0;
     long current_seek = 0;
