@@ -57,8 +57,7 @@ int main(int argc, char **argv)
     List *cipherText = (List *)calloc(1, sizeof(List));
     InitList(cipherText);
 
-    int global_metadata_size = file_size;
-    int result_size = global_metadata_size * 12;
+    int result_size = file_size;
 
     unsigned char *result = (unsigned char*)calloc(result_size, sizeof(unsigned char));
 
