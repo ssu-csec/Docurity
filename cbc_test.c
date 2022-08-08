@@ -83,19 +83,18 @@ void cbc_insert(unsigned char *input, List *list, unsigned char *ivec, int index
 
 
 
-void cbc_delete(List *list, unsigned char *ivec, int index, int del_len, const void *enc_key, const void *dec_key)
+void cbc_delete(List *list, unsigned char *ivec, int index, int delete_size, const void *enc_key, const void *dec_key)
 {
     int max_index = list->count * AES_BLOCK_SIZE;
     if(index >= max_index){
         index = max_index;
     }
 
-    unsigned char* tmp_data = calloc(list->count * AES_BLOCK_SIZE, sizeof(unsigned char));
-    cbc_decrypt(list, tmp_data, ivec, dec_key);
+    unsigned char* decrypt_data = calloc(list->count * AES_BLOCK_SIZE, sizeof(unsigned char));
+    cbc_decrypt(list, decrypt_data, ivec, dec_key);
 
-    unsigned char* new_data = calloc((list->count - (del_len/AES_BLOCK_SIZE)) * AES_BLOCK_SIZE, sizeof(unsigned char));
-    memcpy(new_data, tmp_data, index - 1);
-    memcpy(new_data + index - 1, tmp_data + index + del_len - 1, strlen(tmp_data + index + del_len - 1));
+    unsigned char* new_data = calloc((list->count - (delete_size/AES_BLOCK_SIZE)) * AES_BLOCK_SIZE, sizeof(unsigned char));
+    memcpy(new_data, decrypt_data, index - 1 - 1);
 
     ResetList(list);
 
