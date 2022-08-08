@@ -98,7 +98,7 @@ void ctr_delete(List *list, unsigned char *ivec, int index, int delete_size, uns
 
     ResetList(list);
 
-    ctr_encrypt(new_data, list, strlen(new_data), ivec, last_num, dec_key);
+    ctr_encrypt(new_data, list, (strlen(new_data) / AES_BLOCK_SIZE + 1) * AES_BLOCK_SIZE, ivec, last_num, dec_key);
 
 }
 
