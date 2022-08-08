@@ -83,11 +83,7 @@ void decrypt_global_metadata(unsigned char *global_metadata, unsigned char *enc_
         }
 
         link_back = tmp[15];
-
-        for (int index = 0; index < LINKLESS_BLOCK_SIZE; index++){
-            *metadata_ptr = tmp[index + sizeof(link_t)];
-            metadata_ptr++;
-        }
+        memcpy(metadata_ptr, tmp + sizeof(link_t), LINKLESS_BLOCK_SIZE);
 
         aes_block_count -= AES_BLOCK_SIZE;
         in_ptr += AES_BLOCK_SIZE;
@@ -800,12 +796,12 @@ int find_block_start(int index, int *block_index, unsigned char *global_metadata
             return -1;
         }
 
-        block_start += (int) global_metadata[*block_index];
+        block_start += global_metadata[*block_index];
         (*block_index)++;
     }
 
     (*block_index)--;
-    block_start -= (int) global_metadata[*block_index];
+    block_start -= global_metadata[*block_index];
 
     return block_start;
 }
