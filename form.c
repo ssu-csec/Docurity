@@ -537,14 +537,13 @@ void insertion(List *list, unsigned char *input, int index, int insert_size, con
         memset(enc_global_metadata, 0, BUFSIZE);        // clear original global metadata
 
         int start_point = find_block_start(index, &block_index, global_metadata);
-        char is_block_start = start_point == index ? 1 : 0;
+        char is_block_start = (start_point == index || start_point < 0) ? 1 : 0;
 
         if(is_block_start)  // allocate new block
         {
             insert_data = calloc(insert_size, sizeof(unsigned char));
             // Copy data we want to insert
             memcpy(insert_data, input, insert_size);
-
         }
         else                // index is located in the middle of one block
         {
@@ -576,27 +575,53 @@ void insertion(List *list, unsigned char *input, int index, int insert_size, con
             
             insert_size += block_data_size;
         }
-        Node *prev_node = seekNode(list, block_index-1);
-        Node *next_node = seekNode(list, block_index);
 
-        replace_link(prev_node, front_link, -1, enc_key, dec_key);
-        replace_link(next_node, back_link, 0, enc_key, dec_key);
-
-        List *tmp_list = calloc(1, sizeof(List));
-        InitList(tmp_list);
-
-        encrypt(tmp_list, insert_data, insert_size, enc_key, front_link, back_link);
-
-        // join tmp_list to list[index]
-        Node *tmp_head_node = tmp_list->head->next;
-        Node *tmp_tail_node = tmp_list->head->next;
-        tmp_head_node->prev = prev_node;
-        tmp_tail_node->next = next_node;
-        prev_node->next = tmp_head_node;
-        next_node->prev = tmp_tail_node;
-        list->count += tmp_list->count;
-
-        free(tmp_list);
+        if(start_point < 0){
+            Node *prev_node = seekNode(list, block_index-1);
+            Node *next_node = seekNode(list, 0);
+    
+            replace_link(prev_node, front_link, -1, enc_key, dec_key);
+            replace_link(next_node, back_link, 0, enc_key, dec_key);
+    
+            List *tmp_list = calloc(1, sizeof(List));
+            InitList(tmp_list);
+    
+            encrypt(tmp_list, insert_data, insert_size, enc_key, front_link, back_link);
+    
+            // join tmp_list to list[index]
+            Node *tmp_head_node = tmp_list->head->next;
+            Node *tmp_tail_node = tmp_list->tail->prev;
+            tmp_head_node->prev = prev_node;
+            tmp_tail_node->next = next_node;
+            prev_node->next = tmp_head_node;
+            list->tail->prev = tmp_tail_node;
+            list->count += tmp_list->count;
+    
+            free(tmp_list);
+        }
+        else{
+            Node *prev_node = seekNode(list, block_index-1);
+            Node *next_node = seekNode(list, block_index);
+    
+            replace_link(prev_node, front_link, -1, enc_key, dec_key);
+            replace_link(next_node, back_link, 0, enc_key, dec_key);
+    
+            List *tmp_list = calloc(1, sizeof(List));
+            InitList(tmp_list);
+    
+            encrypt(tmp_list, insert_data, insert_size, enc_key, front_link, back_link);
+    
+            // join tmp_list to list[index]
+            Node *tmp_head_node = tmp_list->head->next;
+            Node *tmp_tail_node = tmp_list->tail->prev;
+            tmp_head_node->prev = prev_node;
+            tmp_tail_node->next = next_node;
+            prev_node->next = tmp_head_node;
+            next_node->prev = tmp_tail_node;
+            list->count += tmp_list->count;
+    
+            free(tmp_list);
+        }
 
         unsigned char *new_metadata = calloc(insert_size/DATA_SIZE_IN_BLOCK + 1, sizeof(unsigned char));
         update_metadata(new_metadata, insert_size);
@@ -604,8 +629,8 @@ void insertion(List *list, unsigned char *input, int index, int insert_size, con
         free(new_metadata);
     }
 
-    print_global_metadata(enc_global_metadata, list->count, dec_key);
     encrypt_global_metadata(global_metadata, enc_global_metadata, list->count, enc_key);
+    print_global_metadata(enc_global_metadata, list->count, dec_key);
 }
 
 void encrypt_block(Node *node, link_t front_link, link_t back_link, bitmap_t bitmap, unsigned char *data,
@@ -715,6 +740,11 @@ int find_block_start(int index, int *block_index, unsigned char *global_metadata
 
     while(block_start <= index)
     {
+        if(*block_index >= strlen(global_metadata)){
+            (*block_index)--;
+            return -1;
+        }
+
         block_start += (int) global_metadata[*block_index];
         (*block_index)++;
     }
@@ -724,6 +754,7 @@ int find_block_start(int index, int *block_index, unsigned char *global_metadata
 
     return block_start;
 }
+
 
 void free_node_safely(Node *prev_node, Node *next_node){
     free(prev_node);
