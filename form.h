@@ -9,7 +9,7 @@
 #define DATA_SIZE_IN_BLOCK  (LINKLESS_BLOCK_SIZE - METADATA_LENGTH)
 #define DATA_START          (LINK_LENGTH + METADATA_LENGTH)
 
-void encrypt_global_metadata(unsigned char *in, unsigned char *out, size_t size, const void *enc_key);
+void encrypt_global_metadata(unsigned char *global_metadata, unsigned char *enc_global_metadata, size_t size, const void *enc_key)
 
 void decrypt_global_metadata(unsigned char *global_metadata, unsigned char *enc_global_metadata, size_t size, const void *dec_key);
 

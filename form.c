@@ -9,40 +9,33 @@
 #include "form.h"
 #include "packet.h"
 
-void encrypt_global_metadata(unsigned char *in, unsigned char *out, size_t size, const void *enc_key)
+void encrypt_global_metadata(unsigned char *global_metadata, unsigned char *enc_global_metadata, size_t size, const void *enc_key)
 {
     srand(time(NULL));
     int index = 0;
     link_t link_front = rand() % 256;
     link_t link_back = rand() % 256;
     link_t ivec = link_front;
-    unsigned char *in_ptr = in;
+    unsigned char *in_ptr = global_metadata;
 
     if(size == 0)
         return;
     
     while(1){
-        out[0] = link_front;
+        enc_global_metadata[0] = link_front;
 
-        for (index = LINK_LENGTH; index < (AES_BLOCK_SIZE - LINK_LENGTH); ++index){
-            if (index < size + LINK_LENGTH){
-                out[index] = in_ptr[index - LINK_LENGTH];
-            }
-            else{
-                out[index] = 0;
-            }
-        }
+        memcpy(enc_global_metadata, in_ptr + sizeof(link_t), LINKLESS_BLOCK_SIZE)
 
         if (size > LINKLESS_BLOCK_SIZE){
-            out[15] = link_back;
+            enc_global_metadata[15] = link_back;
 
-            AES_encrypt(out, out, enc_key);
+            AES_encrypt(enc_global_metadata, enc_global_metadata, enc_key);
         }
         else{
             // Handle the last block
-            out[15] = ivec;
+            enc_global_metadata[15] = ivec;
 
-            AES_encrypt(out, out, enc_key);
+            AES_encrypt(enc_global_metadata, enc_global_metadata, enc_key);
             break;
         }
 
