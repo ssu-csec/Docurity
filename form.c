@@ -114,7 +114,6 @@ void insert_global(unsigned char *global_metadata, unsigned char *metadata, int 
     memcpy(temp, metadata, metadata_size);
     memcpy(temp + metadata_size, global_metadata + index, next_data_size);
 
-    free(global_metadata);
     global_metadata = 0;
 
     global_metadata = temp;
