@@ -20,7 +20,7 @@ void ctr_encrypt(const unsigned char *input_data, List *list, size_t block_count
         list->count = (block_count / AES_BLOCK_SIZE) + 1;
 
     unsigned char ecount_buf[16] = {0, };
-    unsigned char* encrypt_data = calloc(block_count * AES_BLOCK_SIZE, sizeof(unsigned char));
+    unsigned char* encrypt_data = calloc(block_count * AES_BLOCK_SIZE*10, sizeof(unsigned char));
     CRYPTO_ctr128_encrypt(input_data, encrypt_data, block_count, enc_key, ivec_enc, ecount_buf, last_num, (block128_f)AES_encrypt);
 
     unsigned char *node_data = calloc(AES_BLOCK_SIZE, sizeof(unsigned char));
@@ -65,7 +65,7 @@ void ctr_insert(unsigned char *input, List *list, unsigned char *ivec, int index
     {
         unsigned char *data = calloc(size, sizeof(unsigned char));
         memcpy(data, input, size);
-        cbc_encrypt(data, list, (size/AES_BLOCK_SIZE + 1) * AES_BLOCK_SIZE, ivec, enc_key);
+        ctr_encrypt(data, list, (size/AES_BLOCK_SIZE + 1) * AES_BLOCK_SIZE, ivec, last_num, enc_key);
     }
     else
     {
