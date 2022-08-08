@@ -113,6 +113,7 @@ int main(int argc, char **argv)
         }
         else if(strncmp(operation, "Delete", 6) == 0)
         {
+            int length = atoi(buffer);
             cbc_delete(cipherText, ivec, index, length, enc_key, dec_key);
         }
 
