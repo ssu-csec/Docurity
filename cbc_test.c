@@ -31,7 +31,7 @@ void cbc_encrypt(const unsigned char *input_data, List *list, size_t block_count
         encrypt_data += AES_BLOCK_SIZE;
     }
 
-    free(node_data)
+    free(node_data);
 }
 
 void cbc_decrypt(List *list, unsigned char *decrypt_data, unsigned char *ivec, const void *dec_key)
