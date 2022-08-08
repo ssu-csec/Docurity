@@ -39,7 +39,7 @@ dl_ecb_bench_del.o:	dl_ecb_bench_del.c
 
 
 
-cbc_bench: cbc_bench_enc cbc_bench_dec	cbc_bench_ins
+cbc_bench: cbc_bench_enc cbc_bench_dec	cbc_bench_ins cbc_bench_del
 	echo $@
 
 cbc_bench_enc:	node.o	cbc_test.o cbc_bench_enc.o 
@@ -60,9 +60,14 @@ cbc_bench_ins:	node.o	cbc_test.o cbc_bench_ins.o
 cbc_bench_ins.o:	cbc_bench_ins.c
 	$(CC) -c -o	cbc_bench_ins.o	cbc_bench_ins.c	$(LDPATH) $(LDFLAGS) $(CFLAGS)
 
+cbc_bench_del:	node.o	cbc_test.o cbc_bench_del.o 
+	$(CC) -o	cbc_bench_del	node.o	cbc_test.o	cbc_bench_del.o	$(LDPATH) $(LDFLAGS) $(CFLAGS)
+
+cbc_bench_del.o:	cbc_bench_del.c
+	$(CC) -c -o	cbc_bench_del.o	cbc_bench_del.c	$(LDPATH) $(LDFLAGS) $(CFLAGS)
 
 
-ctr_bench: ctr_bench_enc ctr_bench_dec	ctr_bench_ins
+ctr_bench: ctr_bench_enc ctr_bench_dec	ctr_bench_ins ctr_bench_del
 	echo $@
 
 ctr_bench_enc:	node.o	ctr_test.o ctr_bench_enc.o 
@@ -82,6 +87,12 @@ ctr_bench_ins:	node.o	ctr_test.o ctr_bench_ins.o
 
 ctr_bench_ins.o:	ctr_bench_ins.c
 	$(CC) -c -o	ctr_bench_ins.o	ctr_bench_ins.c	$(LDPATH) $(LDFLAGS) $(CFLAGS)
+
+ctr_bench_del:	node.o	ctr_test.o ctr_bench_del.o 
+	$(CC) -o	ctr_bench_del	node.o	ctr_test.o	ctr_bench_del.o	$(LDPATH) $(LDFLAGS) $(CFLAGS)
+
+ctr_bench_del.o:	ctr_bench_del.c
+	$(CC) -c -o	ctr_bench_del.o	ctr_bench_del.c	$(LDPATH) $(LDFLAGS) $(CFLAGS)
 
 
 string_printer: ./scripts/string_printer.c
