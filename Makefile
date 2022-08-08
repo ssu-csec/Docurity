@@ -54,6 +54,12 @@ cbc_bench_dec:	node.o	cbc_test.o cbc_bench_dec.o
 cbc_bench_dec.o:	cbc_bench_dec.c
 	$(CC) -c -o	cbc_bench_dec.o	cbc_bench_dec.c	$(LDPATH) $(LDFLAGS) $(CFLAGS)
 
+cbc_bench_ins:	node.o	cbc_test.o cbc_bench_ins.o 
+	$(CC) -o	cbc_bench_ins	node.o	cbc_test.o	cbc_bench_ins.o	$(LDPATH) $(LDFLAGS) $(CFLAGS)
+
+cbc_bench_ins.o:	cbc_bench_ins.c
+	$(CC) -c -o	cbc_bench_ins.o	cbc_bench_ins.c	$(LDPATH) $(LDFLAGS) $(CFLAGS)
+
 
 
 ctr_bench: ctr_bench_enc ctr_bench_dec
@@ -70,6 +76,12 @@ ctr_bench_dec:	node.o	ctr_test.o ctr_bench_dec.o
 
 ctr_bench_dec.o:	ctr_bench_dec.c
 	$(CC) -c -o	ctr_bench_dec.o	ctr_bench_dec.c	$(LDPATH) $(LDFLAGS) $(CFLAGS)
+
+ctr_bench_ins:	node.o	ctr_test.o ctr_bench_ins.o 
+	$(CC) -o	ctr_bench_ins	node.o	ctr_test.o	ctr_bench_ins.o	$(LDPATH) $(LDFLAGS) $(CFLAGS)
+
+ctr_bench_ins.o:	ctr_bench_ins.c
+	$(CC) -c -o	ctr_bench_ins.o	ctr_bench_ins.c	$(LDPATH) $(LDFLAGS) $(CFLAGS)
 
 
 string_printer: ./scripts/string_printer.c
