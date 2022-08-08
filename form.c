@@ -25,7 +25,7 @@ void encrypt_global_metadata(unsigned char *global_metadata, unsigned char *enc_
     while(1){
         out_ptr[0] = link_front;
 
-        memcpy(out_ptr, in_ptr, LINKLESS_BLOCK_SIZE);
+        memcpy(out_ptr + sizeof(link_t), in_ptr, LINKLESS_BLOCK_SIZE);
 
         if (size > LINKLESS_BLOCK_SIZE){
             out_ptr[15] = link_back;
@@ -658,9 +658,12 @@ void insertion(List *list, unsigned char *input, int index, int insert_size, con
 
             unsigned char *new_metadata = calloc(insert_size/DATA_SIZE_IN_BLOCK + 1, sizeof(unsigned char));
             printf("allocate\t| new_metadata at %x\n", new_metadata);
+
             update_metadata(new_metadata, insert_size);
             insert_global(global_metadata, new_metadata, block_index);
+
             printf("free\t\t| new_metadata at %x\n", new_metadata);
+
             free(new_metadata);
             new_metadata = 0;
         }
