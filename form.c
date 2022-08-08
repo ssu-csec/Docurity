@@ -601,7 +601,7 @@ void insertion(List *list, unsigned char *input, int index, int insert_size, con
             free(block_data);
             delete_global(global_metadata, block_index, 1);
             
-            insert_size += block_data_size;
+            insert_size += block_back_size;
         }
 
         Node *prev_node, *next_node, *origin_tail;
