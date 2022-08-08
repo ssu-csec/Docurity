@@ -52,6 +52,7 @@ void encrypt_global_metadata(unsigned char *in, unsigned char *out, size_t size,
         in += LINKLESS_BLOCK_SIZE;
         out += AES_BLOCK_SIZE;
     }
+    printf("free at %x\n", in);
     free(in);
 }
 
@@ -128,6 +129,7 @@ void insert_global(unsigned char *global_metadata, unsigned char *metadata, int 
 
     memcpy(global_metadata + index, temp, temp_size);       // Overwrite origin global metadata
 
+    printf("free at %x\n", temp);
     free(temp);
 }
 
@@ -591,6 +593,7 @@ void insertion(List *list, unsigned char *input, int index, int insert_size, con
             unsigned char *tmp_data = calloc(insert_size + block_data_size, sizeof(unsigned char));
             decrypt_block(block, &front_link, &back_link, &bitmap, tmp_data, dec_key);
             copy_data(block_data, tmp_data, bitmap);
+            printf("free at %x\n", tmp_data);
             free(tmp_data);
 
             removeNode(block);
@@ -602,6 +605,7 @@ void insertion(List *list, unsigned char *input, int index, int insert_size, con
             memcpy(insert_point, input, insert_size);
             memcpy(insert_point + insert_size, block_data + block_front_size, block_back_size);
 
+            printf("free at %x\n", block_data);
             free(block_data);
             delete_global(global_metadata, block_index, 1);
 
@@ -636,16 +640,18 @@ void insertion(List *list, unsigned char *input, int index, int insert_size, con
             origin_tail->prev = tmp_tail_node;
             list->count += tmp_list->count;
     
+            printf("free at %x\n", tmp_list);
             free(tmp_list);
 
             unsigned char *new_metadata = calloc(insert_size/DATA_SIZE_IN_BLOCK + 1, sizeof(unsigned char));
             update_metadata(new_metadata, insert_size);
             insert_global(global_metadata, new_metadata, block_index);
+            printf("free at %x\n", new_metadata);
             free(new_metadata);
         }
 
     encrypt_global_metadata(global_metadata, enc_global_metadata, list->count, enc_key);
-    print_global_metadata(enc_global_metadata, list->count, dec_key);
+    //print_global_metadata(enc_global_metadata, list->count, dec_key);
 }
 
 void encrypt_block(Node *node, link_t front_link, link_t back_link, bitmap_t bitmap, unsigned char *data,
@@ -665,6 +671,7 @@ void encrypt_block(Node *node, link_t front_link, link_t back_link, bitmap_t bit
     tmp_data[index] = back_link;
 
     AES_encrypt(tmp_data, &(node->data), enc_key);
+    printf("free at %x\n", tmp_data);
     free(tmp_data);
 }
 
@@ -689,6 +696,7 @@ void decrypt_block(Node *node, link_t *front_link, link_t *back_link, bitmap_t *
     if(data){
         memcpy(data, tmp_data + DATA_START, DATA_SIZE_IN_BLOCK);
     }
+    printf("free at %x\n", tmp_data);
     free(tmp_data);
 }
 
@@ -772,8 +780,10 @@ int find_block_start(int index, int *block_index, unsigned char *global_metadata
 
 
 void free_node_safely(Node *prev_node, Node *next_node){
+    printf("free at %x\n", prev_node);
     free(prev_node);
     if(prev_node != next_node){
+        printf("free at %x\n", next_node);
         free(next_node);
     }
 }
@@ -809,6 +819,7 @@ void unpacking_data(unsigned char *msg, Node *new_node, List *list)
             node = seekNode(list, index);
             node->next->prev = node->prev;
             node->prev->next = node->next;
+            printf("free at %x\n", node);
             free(node);
         }
         else if(msg[1] == INSERT)
@@ -820,6 +831,7 @@ void unpacking_data(unsigned char *msg, Node *new_node, List *list)
             node = seekNode(list, index);
             node->prev = new_node;
             new_node->next = node;
+            printf("free at %x\n", node);
             free(node);
         }
 }
