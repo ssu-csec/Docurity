@@ -438,6 +438,7 @@ void deletion_single_block(List *list, int block_index, int index, int size, uns
     if(bitmap == 0){
         removeNode(block);
         delete_global(global_metadata, block_index, 1);
+        list->count--;
         return;
     }
     else{
