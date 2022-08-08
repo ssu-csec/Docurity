@@ -94,24 +94,20 @@ int main(int argc, char **argv)
         // do something!
         if(strncmp(operation, "Insert", 6) == 0)
         {
-            start = clock();
             ctr_insert(buffer, cipherText, ivec, index+1, &last_num, strlen(buffer), enc_key);
-            end = clock();
-            cpu_time_used = ((double) (end - start)) / CLOCKS_PER_SEC;
-            printf("%f\n", cpu_time_used);
         }
         else if(strncmp(operation, "Modify", 6) == 0)
         {
-            start = clock();
             ctr_modify(buffer, cipherText, ivec, index+1, &last_num, strlen(buffer), enc_key);
-            end = clock();
-            cpu_time_used = ((double) (end - start)) / CLOCKS_PER_SEC;
-            printf("%f\n", cpu_time_used);
         }
         else if(strncmp(operation, "Delete", 6) == 0)
         {
+            start = clock();
             int length = atoi(buffer);
             ctr_delete(cipherText, ivec, index+1, length, &last_num, enc_key);
+            end = clock();
+            cpu_time_used = ((double) (end - start)) / CLOCKS_PER_SEC;
+            printf("%f\n", cpu_time_used);
         }
 
         memset(buffer, 0, 1); //clear buffer
