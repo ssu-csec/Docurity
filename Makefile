@@ -39,7 +39,7 @@ dl_ecb_bench_del.o:	dl_ecb_bench_del.c
 
 
 
-cbc_bench: cbc_bench_enc cbc_bench_dec
+cbc_bench: cbc_bench_enc cbc_bench_dec	cbc_bench_ins
 	echo $@
 
 cbc_bench_enc:	node.o	cbc_test.o cbc_bench_enc.o 
@@ -62,7 +62,7 @@ cbc_bench_ins.o:	cbc_bench_ins.c
 
 
 
-ctr_bench: ctr_bench_enc ctr_bench_dec
+ctr_bench: ctr_bench_enc ctr_bench_dec	ctr_bench_ins
 	echo $@
 
 ctr_bench_enc:	node.o	ctr_test.o ctr_bench_enc.o 
