@@ -17,6 +17,7 @@ void encrypt_global_metadata(unsigned char *global_metadata, unsigned char *enc_
     link_t link_back = rand() % 256;
     link_t ivec = link_front;
     unsigned char *in_ptr = global_metadata;
+    unsigned char *out_ptr = enc_global_metadata;
 
     if(size == 0)
         return;
@@ -24,7 +25,7 @@ void encrypt_global_metadata(unsigned char *global_metadata, unsigned char *enc_
     while(1){
         enc_global_metadata[0] = link_front;
 
-        memcpy(enc_global_metadata, in_ptr + sizeof(link_t), LINKLESS_BLOCK_SIZE)
+        memcpy(enc_global_metadata, in_ptr + sizeof(link_t), LINKLESS_BLOCK_SIZE);
 
         if (size > LINKLESS_BLOCK_SIZE){
             enc_global_metadata[15] = link_back;
@@ -44,7 +45,7 @@ void encrypt_global_metadata(unsigned char *global_metadata, unsigned char *enc_
 
         size -= LINKLESS_BLOCK_SIZE;
         in_ptr += LINKLESS_BLOCK_SIZE;
-        out += AES_BLOCK_SIZE;
+        out_ptr += AES_BLOCK_SIZE;
     }
 }
 
