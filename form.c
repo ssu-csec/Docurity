@@ -574,7 +574,9 @@ void insertion(List *list, unsigned char *input, int index, int insert_size, con
 
         if(is_block_start)  // allocate new block
         {
-            insert_data = input;
+            insert_data = calloc(insert_size, sizeof(unsigned char));
+            // Copy data we want to insert
+            memcpy(insert_data, input, insert_size);
         }
         else                // index is located in the middle of one block
         {
