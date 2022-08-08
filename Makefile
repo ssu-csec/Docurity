@@ -5,6 +5,22 @@ LDFLAGS = -lssl -lcrypto -lpthread
 
 build: cbc_bench	ctr_bench	test
 
+bench: dl_ecb_bench	cbc_bench	ctr_bench
+
+dl_ecb_bench: dl_ecb_bench_enc dl_ecb_bench_dec
+
+dl_ecb_bench_enc:	node.o	form.o dl_ecb_bench_enc.o 
+	$(CC) -o	dl_ecb_bench_enc	node.o	form.o	dl_ecb_bench_enc.o	$(LDPATH) $(LDFLAGS) $(CFLAGS)
+
+dl_ecb_bench_enc.o:	dl_ecb_bench_enc.c
+	$(CC) -c -o	dl_ecb_bench_enc.o	dl_ecb_bench_enc.c	$(LDPATH) $(LDFLAGS) $(CFLAGS)
+
+dl_ecb_bench_dec:	node.o	form.o dl_ecb_bench_dec.o 
+	$(CC) -o	dl_ecb_bench_dec	node.o	form.o	dl_ecb_bench_dec.o	$(LDPATH) $(LDFLAGS) $(CFLAGS)
+
+dl_ecb_bench_dec.o:	dl_ecb_bench_dec.c
+	$(CC) -c -o	dl_ecb_bench_dec.o	dl_ecb_bench_dec.c	$(LDPATH) $(LDFLAGS) $(CFLAGS)
+
 test:	node.o	form.o test.o 
 	$(CC) -o	test	node.o	form.o	test.o	$(LDPATH) $(LDFLAGS) $(CFLAGS)
 
