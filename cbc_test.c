@@ -94,7 +94,7 @@ void cbc_delete(List *list, unsigned char *ivec, int index, int delete_size, con
     cbc_decrypt(list, decrypt_data, ivec, dec_key);
 
     unsigned char* new_data = calloc((list->count - (delete_size/AES_BLOCK_SIZE)) * AES_BLOCK_SIZE, sizeof(unsigned char));
-    memcpy(new_data, decrypt_data, index - 1 - 1);
+    memcpy(new_data, decrypt_data, index - 1);
 
     ResetList(list);
 
