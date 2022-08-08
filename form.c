@@ -548,7 +548,7 @@ void delete_blocks(List *list, int first_block_num, int last_block_num, int boun
 
 
 void insertion(List *list, unsigned char *input, int index, int insert_size, const void *enc_key, const void *dec_key, 
-                unsigned char *enc_global_metadata, int enc_global_metadata_size)                                                                      
+                unsigned char *enc_global_metadata)                                                                      
 {
     // find block to be inserted
     // copy original data
@@ -574,7 +574,6 @@ void insertion(List *list, unsigned char *input, int index, int insert_size, con
     }
     else{
         global_metadata = decrypt_global_metadata(enc_global_metadata, list->count, dec_key);
-        memset(enc_global_metadata, 0, enc_global_metadata_size);        // clear original global metadata
         unsigned char *insert_data;
 
         int start_point = find_block_start(index, &block_index, global_metadata);

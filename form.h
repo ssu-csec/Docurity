@@ -41,7 +41,7 @@ void delete_blocks(List *list, int first_block_num, int last_block_num, int boun
                             unsigned char *global_metadata, const void *enc_key, const void *dec_key);
 
 void insertion(List *list, unsigned char *input, int index, int insert_size, const void *enc_key, const void *dec_key, 
-                unsigned char *enc_global_metadata, int enc_global_metadata_size);
+                unsigned char *enc_global_metadata);
 
 void encrypt_block(Node *node, link_t front_link, link_t back_link, bitmap_t bitmap, unsigned char *data,
                     const void *enc_key);
