@@ -53,15 +53,11 @@ void encrypt_global_metadata(unsigned char *in, unsigned char *out, size_t size,
         in_ptr += LINKLESS_BLOCK_SIZE;
         out += AES_BLOCK_SIZE;
     }
-    printf("free\t\t| in at %x\n", in);
-    free(in);
 }
 
-unsigned char *decrypt_global_metadata(unsigned char *enc_global_metadata, size_t size, const void *dec_key)
+void decrypt_global_metadata(unsigned char *global_metadata, unsigned char *enc_global_metadata, const void *dec_key)
 {
     unsigned char tmp[AES_BLOCK_SIZE] = {0, };
-    unsigned char *global_metadata = calloc(size, sizeof(unsigned char));
-    printf("allocate\t| global_metadata at %x\n", global_metadata);
     unsigned char *metadata_ptr = global_metadata;
     int aes_block_count = get_aes_block_count(size);
     int first_check = aes_block_count;
@@ -95,23 +91,21 @@ unsigned char *decrypt_global_metadata(unsigned char *enc_global_metadata, size_
         aes_block_count -= AES_BLOCK_SIZE;
         enc_global_metadata += AES_BLOCK_SIZE;
     }
-
-    return global_metadata;
 }
 
-void print_global_metadata(unsigned char *enc_global_metadata, size_t size, const void *dec_key){
-    unsigned char *global_metadata = decrypt_global_metadata(enc_global_metadata, size, dec_key);
+// void print_global_metadata(unsigned char *enc_global_metadata, size_t size, const void *dec_key){
+//     unsigned char *global_metadata = decrypt_global_metadata(enc_global_metadata, size, dec_key);
 
-    printf("Global Metadata Map\n");
+//     printf("Global Metadata Map\n");
 
-    for(int i = 0; i < size; i++){
-        if(i % 10 == 0 && i != 0){
-            printf("\n");
-        }
-        printf("[%d]", global_metadata[i]);
-    }
-    printf("\n");
-}
+//     for(int i = 0; i < size; i++){
+//         if(i % 10 == 0 && i != 0){
+//             printf("\n");
+//         }
+//         printf("[%d]", global_metadata[i]);
+//     }
+//     printf("\n");
+// }
 
 void insert_global(unsigned char *global_metadata, unsigned char *metadata, int index)
 {
@@ -132,6 +126,7 @@ void insert_global(unsigned char *global_metadata, unsigned char *metadata, int 
 
     printf("free\t\t| temp at %x\n", temp);
     free(global_metadata);
+    global_metadata = 0;
 
     global_metadata = temp;
 }
@@ -274,7 +269,8 @@ void deletion(List *list, int index, int size, const void *enc_key, const void *
     link_t back_link = rand()%256;
     bitmap_t bitmap = 0;
 
-    unsigned char *global_metadata = decrypt_global_metadata(enc_global_metadata, list->count, dec_key);
+    unsigned char *global_metadata = calloc(list->count, sizeof(unsigned char));
+    decrypt_global_metadata(global_metadata, enc_global_metadata, dec_key);
 
     int total_size = 0;
 
@@ -433,7 +429,10 @@ void deletion(List *list, int index, int size, const void *enc_key, const void *
         }
     }
 
-    encrypt_global_metadata(global_metadata, enc_global_metadata, list->count, enc_key);
+    encrypt_global_metadata(global_metadata, enc_global_metadata, enc_key);
+    printf("free\t\t| global_metadata at %x\n", in);
+    free(global_metadata);
+    global_metadata = 0;
 }
 
 void deletion_single_block(List *list, int block_index, int index, int size, unsigned char *global_metadata,
@@ -573,7 +572,10 @@ void insertion(List *list, unsigned char *input, int index, int insert_size, con
         update_metadata(global_metadata, insert_size);
     }
     else{
-        global_metadata = decrypt_global_metadata(enc_global_metadata, list->count, dec_key);
+        global_metadata = calloc(list->count, sizeof(unsigned char));
+        printf("allocate\t| global_metadata at %x\n", global_metadata);
+
+        decrypt_global_metadata(global_metadata, enc_global_metadata, dec_key);
         unsigned char *insert_data;
 
         int start_point = find_block_start(index, &block_index, global_metadata);
@@ -607,6 +609,7 @@ void insertion(List *list, unsigned char *input, int index, int insert_size, con
             copy_data(block_data, tmp_data, bitmap);
             printf("free\t\t| tmp_data at %x\n", tmp_data);
             free(tmp_data);
+            tmp_data = 0;
 
             removeNode(block);
             list->count--;
@@ -619,6 +622,7 @@ void insertion(List *list, unsigned char *input, int index, int insert_size, con
 
             printf("free\t\t| block_data at %x\n", block_data);
             free(block_data);
+            block_data = 0;
             delete_global(global_metadata, block_index, 1);
 
             insert_size += block_data_size;
@@ -645,6 +649,7 @@ void insertion(List *list, unsigned char *input, int index, int insert_size, con
     
             encrypt(tmp_list, insert_data, insert_size, enc_key, front_link, back_link);
             free(insert_data);
+            insert_data = 0;
             // join tmp_list to list[index]
             Node *tmp_head_node = tmp_list->head->next;
             Node *tmp_tail_node = tmp_list->tail->prev;
@@ -656,6 +661,7 @@ void insertion(List *list, unsigned char *input, int index, int insert_size, con
     
             printf("free\t\t| tmp_list at %x\n", tmp_list);
             free(tmp_list);
+            tmp_list = 0;
 
             unsigned char *new_metadata = calloc(insert_size/DATA_SIZE_IN_BLOCK + 1, sizeof(unsigned char));
             printf("allocate\t| new_metadata at %x\n", new_metadata);
@@ -663,9 +669,14 @@ void insertion(List *list, unsigned char *input, int index, int insert_size, con
             insert_global(global_metadata, new_metadata, block_index);
             printf("free\t\t| new_metadata at %x\n", new_metadata);
             free(new_metadata);
+            new_metadata = 0;
         }
 
-    encrypt_global_metadata(global_metadata, enc_global_metadata, list->count, enc_key);
+    encrypt_global_metadata(global_metadata, enc_global_metadata, enc_key);
+
+    printf("free\t\t| global_metadata at %x\n", in);
+    free(global_metadata);
+    global_metadata = 0;
     //print_global_metadata(enc_global_metadata, list->count, dec_key);
 }
 
@@ -689,6 +700,7 @@ void encrypt_block(Node *node, link_t front_link, link_t back_link, bitmap_t bit
     AES_encrypt(tmp_data, &(node->data), enc_key);
     printf("free\t\t| tmp_data at %x\n", tmp_data);
     free(tmp_data);
+    tmp_data = 0;
 }
 
 void decrypt_block(Node *node, link_t *front_link, link_t *back_link, bitmap_t *bitmap, unsigned char *data,
@@ -715,6 +727,7 @@ void decrypt_block(Node *node, link_t *front_link, link_t *back_link, bitmap_t *
     }
     printf("free\t\t| tmp_data at %x\n", tmp_data);
     free(tmp_data);
+    tmp_data = 0;
 }
 
 link_t get_link(Node *node, char index, const void *dec_key){
@@ -800,9 +813,11 @@ int find_block_start(int index, int *block_index, unsigned char *global_metadata
 void free_node_safely(Node *prev_node, Node *next_node){
     printf("free\t\t| prev_node at %x\n", prev_node);
     free(prev_node);
+    prev_node = 0;
     if(prev_node != next_node){
         printf("free\t\t| next_node at %x\n", next_node);
         free(next_node);
+        next_node = 0;
     }
 }
 
@@ -840,6 +855,7 @@ void unpacking_data(unsigned char *msg, Node *new_node, List *list)
             node->prev->next = node->next;
             printf("free\t\t| node at %x\n", node);
             free(node);
+            node = 0;
         }
         else if(msg[1] == INSERT)
         {
@@ -853,5 +869,6 @@ void unpacking_data(unsigned char *msg, Node *new_node, List *list)
             new_node->next = node;
             printf("free\t\t| node at %x\n", node);
             free(node);
+            node = 0;
         }
 }
