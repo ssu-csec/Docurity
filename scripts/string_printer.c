@@ -9,7 +9,7 @@ int main (int argc, char **argv) {
     }
 
 	srand((unsigned int)(time(NULL)));
-	int size = atoi(argv[1]);
+	unsigned int size = atoi(argv[1]);
 
 	char char1[] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789/,.-+=~`<>:";
 	for(int index = 0; index < size; index++)

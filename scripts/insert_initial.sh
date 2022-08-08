@@ -8,6 +8,7 @@ echo "$0 ${Binary} ${Tmpfile} ${MAX_SIZE}"
 
 for ((i=1; i<$MAX_SIZE+1; i++))
 do
+	echo "${Binary} ${i}" 
 	rm $Tmpfile
 	echo "${Operation}" >> $Tmpfile
 	echo "0" >> $Tmpfile
