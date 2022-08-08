@@ -80,7 +80,7 @@ int main(int argc, char **argv)
     while(1)
     {
         // read operation
-        fseek(current_seek, 0, SEEK_CUR);
+        current_seek = ftell(input_file);
         if(current_seek == SEEK_END)
             break;
 
