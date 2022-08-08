@@ -578,11 +578,11 @@ void insertion(List *list, unsigned char *input, int index, int insert_size, con
 
         Node *prev_node, *next_node, *origin_tail;
         if(start_point < 0){
-            prev_node = seekNode(list, block_index-1);
-            next_node = seekNode(list, 0);
+            prev_node = seekNode(list, block_index);
+            next_node = seekNode(list, 0);  // link with first
             origin_tail = list->tail;
             replace_link(prev_node, front_link, -1, enc_key, dec_key);
-            back_link = get_link(next_node, -1, dec_key);
+            back_link = get_link(next_node, 0, dec_key);
         }
         else{
             prev_node = seekNode(list, block_index-1);
