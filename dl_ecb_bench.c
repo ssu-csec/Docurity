@@ -7,14 +7,14 @@
 #include <openssl/modes.h>
 #include "form.h"
 
-AES_KEY *gen_enc_key(unsigned char cts128_test_key){
+AES_KEY *gen_enc_key(const char *cts128_test_key){
     AES_KEY *key;
     key = (AES_KEY*)malloc(sizeof(AES_KEY));
     AES_set_encrypt_key(cts128_test_key, 128, key);
     return key;
 }
 
-AES_KEY *gen_dec_key(unsigned char cts128_test_key){
+AES_KEY *gen_dec_key(const char *cts128_test_key){
     AES_KEY *key;
     key = (AES_KEY*)malloc(sizeof(AES_KEY));
     AES_set_decrypt_key(cts128_test_key, 128, key);
