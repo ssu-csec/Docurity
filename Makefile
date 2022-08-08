@@ -10,7 +10,7 @@ bench: dl_ecb_bench	cbc_bench	ctr_bench string_printer
 
 
 
-dl_ecb_bench: dl_ecb_bench_enc dl_ecb_bench_dec
+dl_ecb_bench: dl_ecb_bench_enc dl_ecb_bench_dec dl_ecb_bench_ins dl_ecb_bench_del
 	echo $@
 
 dl_ecb_bench_enc:	node.o	form.o dl_ecb_bench_enc.o 
@@ -24,6 +24,18 @@ dl_ecb_bench_dec:	node.o	form.o dl_ecb_bench_dec.o
 
 dl_ecb_bench_dec.o:	dl_ecb_bench_dec.c
 	$(CC) -c -o	dl_ecb_bench_dec.o	dl_ecb_bench_dec.c	$(LDPATH) $(LDFLAGS) $(CFLAGS)
+
+dl_ecb_bench_ins:	node.o	form.o dl_ecb_bench_ins.o 
+	$(CC) -o	dl_ecb_bench_ins	node.o	form.o	dl_ecb_bench_ins.o	$(LDPATH) $(LDFLAGS) $(CFLAGS)
+
+dl_ecb_bench_ins.o:	dl_ecb_bench_ins.c
+	$(CC) -c -o	dl_ecb_bench_ins.o	dl_ecb_bench_ins.c	$(LDPATH) $(LDFLAGS) $(CFLAGS)
+
+dl_ecb_bench_del:	node.o	form.o dl_ecb_bench_del.o 
+	$(CC) -o	dl_ecb_bench_del	node.o	form.o	dl_ecb_bench_del.o	$(LDPATH) $(LDFLAGS) $(CFLAGS)
+
+dl_ecb_bench_del.o:	dl_ecb_bench_del.c
+	$(CC) -c -o	dl_ecb_bench_del.o	dl_ecb_bench_del.c	$(LDPATH) $(LDFLAGS) $(CFLAGS)
 
 
 
