@@ -45,7 +45,7 @@ int main(int argc, char **argv)
     // 2. fread to buffer if not EOF
 
     char *file_name = argv[1];
-    FILE *input_file = fopen(file_name, "rb");
+    FILE *input_file = fopen(file_name, "r");
     if (input_file == NULL) {
         fputs("File error", stderr);
         exit(1);
