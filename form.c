@@ -23,20 +23,20 @@ void encrypt_global_metadata(unsigned char *global_metadata, unsigned char *enc_
         return;
     
     while(1){
-        enc_global_metadata[0] = link_front;
+        out_ptr[0] = link_front;
 
-        memcpy(enc_global_metadata, in_ptr, LINKLESS_BLOCK_SIZE);
+        memcpy(out_ptr, in_ptr, LINKLESS_BLOCK_SIZE);
 
         if (size > LINKLESS_BLOCK_SIZE){
-            enc_global_metadata[15] = link_back;
+            out_ptr[15] = link_back;
 
-            AES_encrypt(enc_global_metadata, enc_global_metadata, enc_key);
+            AES_encrypt(out_ptr, out_ptr, enc_key);
         }
         else{
             // Handle the last block
-            enc_global_metadata[15] = ivec;
+            out_ptr[15] = ivec;
 
-            AES_encrypt(enc_global_metadata, enc_global_metadata, enc_key);
+            AES_encrypt(out_ptr, out_ptr, enc_key);
             break;
         }
 
