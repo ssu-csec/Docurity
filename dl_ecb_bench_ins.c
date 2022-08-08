@@ -115,9 +115,9 @@ int main(int argc, char **argv)
         memset(buffer, 0, 1); //clear buffer
     }
 
-    int result_size = global_metadata_size * 12;
-    unsigned char *result = (unsigned char*)calloc(result_size, sizeof(unsigned char));
-    decrypt(result, cipherText, dec_key);
+    // int result_size = global_metadata_size * 12;
+    // unsigned char *result = (unsigned char*)calloc(result_size, sizeof(unsigned char));
+    // decrypt(result, cipherText, dec_key);
 
     return 0;
 }
