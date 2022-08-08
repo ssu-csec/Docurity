@@ -581,15 +581,16 @@ void insertion(List *list, unsigned char *input, int index, int insert_size, con
             prev_node = seekNode(list, block_index-1);
             next_node = seekNode(list, 0);
             origin_tail = list->tail;
+            replace_link(prev_node, front_link, -1, enc_key, dec_key);
+            back_link = get_link(next_node, -1, dec_key);
         }
         else{
             prev_node = seekNode(list, block_index-1);
             next_node = seekNode(list, block_index);
             origin_tail = next_node;
-        }
             replace_link(prev_node, front_link, -1, enc_key, dec_key);
             replace_link(next_node, back_link, 0, enc_key, dec_key);
-    
+        }
             List *tmp_list = calloc(1, sizeof(List));
             InitList(tmp_list);
     
