@@ -25,7 +25,7 @@ void encrypt_global_metadata(unsigned char *global_metadata, unsigned char *enc_
     while(1){
         enc_global_metadata[0] = link_front;
 
-        memcpy(enc_global_metadata, in_ptr + sizeof(link_t), LINKLESS_BLOCK_SIZE);
+        memcpy(enc_global_metadata, in_ptr, LINKLESS_BLOCK_SIZE);
 
         if (size > LINKLESS_BLOCK_SIZE){
             enc_global_metadata[15] = link_back;
