@@ -68,10 +68,10 @@ int main(int argc, char **argv)
     int global_metadata_size = file_size;
     int result_size = global_metadata_size * 12;
 
-    unsigned char global_metadata = (unsigned char*)calloc(global_metadata_size, sizeof(unsigned char));
-    unsigned char result = (unsigned char*)calloc(result_size, sizeof(unsigned char));
+    unsigned char *global_metadata = (unsigned char*)calloc(global_metadata_size, sizeof(unsigned char));
+    unsigned char *result = (unsigned char*)calloc(result_size, sizeof(unsigned char));
 
-    unsigned char buffer = (unsigned char*)calloc(file_size, sizeof(unsigned char));
+    unsigned char *buffer = (unsigned char*)calloc(file_size, sizeof(unsigned char));
     unsigned char operation[10] = {0, };
 
     int is_data_read = 0;
