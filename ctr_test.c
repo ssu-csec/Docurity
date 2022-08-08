@@ -79,7 +79,7 @@ void ctr_insert(unsigned char *input, List *list, unsigned char *ivec, int index
         memcpy(new_data + index + size - 1, decrypt_data + index - 1, list->count * AES_BLOCK_SIZE - index);
 
         ResetList(list);
-        ctr_encrypt(new_data, list, strlen(new_data), ivec, last_num, enc_key);
+        ctr_encrypt(new_data, list, (strlen(new_data) / AES_BLOCK_SIZE + 1) * AES_BLOCK_SIZE, ivec, last_num, enc_key);
     }
 }
 
