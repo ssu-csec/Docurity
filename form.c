@@ -133,7 +133,7 @@ void insert_global(unsigned char *global_metadata, unsigned char *metadata, int 
     printf("free\t\t| temp at %x\n", temp);
     free(global_metadata);
 
-    global_metadata = tmp;
+    global_metadata = temp;
 }
 
 void delete_global(unsigned char *global_metadata, int index, int size)
