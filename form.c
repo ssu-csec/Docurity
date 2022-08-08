@@ -16,6 +16,7 @@ void encrypt_global_metadata(unsigned char *in, unsigned char *out, size_t size,
     link_t link_front = rand() % 256;
     link_t link_back = rand() % 256;
     link_t ivec = link_front;
+    unsigned char *in_ptr = in;
 
     if(size == 0)
         return;
@@ -25,7 +26,7 @@ void encrypt_global_metadata(unsigned char *in, unsigned char *out, size_t size,
 
         for (index = LINK_LENGTH; index < (AES_BLOCK_SIZE - LINK_LENGTH); ++index){
             if (index < size + LINK_LENGTH){
-                out[index] = in[index - LINK_LENGTH];
+                out[index] = in_ptr[index - LINK_LENGTH];
             }
             else{
                 out[index] = 0;
@@ -49,7 +50,7 @@ void encrypt_global_metadata(unsigned char *in, unsigned char *out, size_t size,
         link_back = rand() % 256;
 
         size -= LINKLESS_BLOCK_SIZE;
-        in += LINKLESS_BLOCK_SIZE;
+        in_ptr += LINKLESS_BLOCK_SIZE;
         out += AES_BLOCK_SIZE;
     }
     printf("free in at %x\n", in);
