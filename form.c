@@ -264,7 +264,6 @@ void deletion(List *list, int index, int size, const void *enc_key, const void *
 {
     srand(time(NULL));
     int delete_end = index + size;
-    int bound = index + size + 1;
     link_t front_link = rand()%256;
     link_t back_link = rand()%256;
     bitmap_t bitmap = 0;
@@ -299,6 +298,7 @@ void deletion(List *list, int index, int size, const void *enc_key, const void *
         }
         else{
             // bound block
+            int bound = index + size + 1;
             int bound_block_num = 0;
             find_block_start(bound, &bound_block_num, global_metadata);
 
@@ -515,7 +515,7 @@ void delete_blocks(List *list, int first_block_num, int last_block_num, int boun
         Node *bound_block = seekNode(list, bound_block_num);
 
         replace_link(front_block, front_link, -1, enc_key, dec_key);
-        replace_link(bound_block, front_link, 0, enc_key, dec_key);
+        replace_link(bound_block, back_link, 0, enc_key, dec_key);
 
         removeNodes(list, first_block_num, last_block_num);
     }
