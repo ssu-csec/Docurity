@@ -5,7 +5,7 @@ LDFLAGS = -lssl -lcrypto -lpthread
 
 build: cbc_bench	ctr_bench	test
 
-bench: dl_ecb_bench	cbc_bench	ctr_bench
+bench: dl_ecb_bench	cbc_bench	ctr_bench string_printer
 	echo $@
 
 
@@ -59,6 +59,9 @@ ctr_bench_dec:	node.o	ctr_test.o ctr_bench_dec.o
 ctr_bench_dec.o:	ctr_bench_dec.c
 	$(CC) -c -o	ctr_bench_dec.o	ctr_bench_dec.c	$(LDPATH) $(LDFLAGS) $(CFLAGS)
 
+
+string_printer: string_printer.c
+	$(CC) -o ./scripts/string_printer ./scripts/string_printer.c
 
 
 test:	node.o	form.o test.o 
