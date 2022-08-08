@@ -91,7 +91,7 @@ void ctr_delete(List *list, unsigned char *ivec, int index, int delete_size, uns
     }
 
     unsigned char* decrypt_data = calloc(list->count * AES_BLOCK_SIZE, sizeof(unsigned char));
-    cbc_decrypt(list, decrypt_data, ivec, dec_key);
+    ctr_decrypt(list, decrypt_data, ivec, last_num, dec_key);
 
     unsigned char* new_data = calloc(list->count * AES_BLOCK_SIZE, sizeof(unsigned char));
     memcpy(new_data, decrypt_data, index - 1);
