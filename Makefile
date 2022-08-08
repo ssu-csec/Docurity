@@ -21,6 +21,42 @@ dl_ecb_bench_dec:	node.o	form.o dl_ecb_bench_dec.o
 dl_ecb_bench_dec.o:	dl_ecb_bench_dec.c
 	$(CC) -c -o	dl_ecb_bench_dec.o	dl_ecb_bench_dec.c	$(LDPATH) $(LDFLAGS) $(CFLAGS)
 
+
+
+
+cbc_bench: cbc_bench_enc cbc_bench_dec
+
+cbc_bench_enc:	node.o	cbc_test.o cbc_bench_enc.o 
+	$(CC) -o	cbc_bench_enc	node.o	cbc_test.o	cbc_bench_enc.o	$(LDPATH) $(LDFLAGS) $(CFLAGS)
+
+cbc_bench_enc.o:	cbc_bench_enc.c
+	$(CC) -c -o	cbc_bench_enc.o	cbc_bench_enc.c	$(LDPATH) $(LDFLAGS) $(CFLAGS)
+
+cbc_bench_dec:	node.o	cbc_test.o cbc_bench_dec.o 
+	$(CC) -o	cbc_bench_dec	node.o	cbc_test.o	cbc_bench_dec.o	$(LDPATH) $(LDFLAGS) $(CFLAGS)
+
+cbc_bench_dec.o:	cbc_bench_dec.c
+	$(CC) -c -o	cbc_bench_dec.o	cbc_bench_dec.c	$(LDPATH) $(LDFLAGS) $(CFLAGS)
+
+
+
+
+ctr_bench: ctr_bench_enc ctr_bench_dec
+
+ctr_bench_enc:	node.o	ctr_test.o ctr_bench_enc.o 
+	$(CC) -o	ctr_bench_enc	node.o	ctr_test.o	ctr_bench_enc.o	$(LDPATH) $(LDFLAGS) $(CFLAGS)
+
+ctr_bench_enc.o:	ctr_bench_enc.c
+	$(CC) -c -o	ctr_bench_enc.o	ctr_bench_enc.c	$(LDPATH) $(LDFLAGS) $(CFLAGS)
+
+ctr_bench_dec:	node.o	ctr_test.o ctr_bench_dec.o 
+	$(CC) -o	ctr_bench_dec	node.o	ctr_test.o	ctr_bench_dec.o	$(LDPATH) $(LDFLAGS) $(CFLAGS)
+
+ctr_bench_dec.o:	ctr_bench_dec.c
+	$(CC) -c -o	ctr_bench_dec.o	ctr_bench_dec.c	$(LDPATH) $(LDFLAGS) $(CFLAGS)
+
+
+
 test:	node.o	form.o test.o 
 	$(CC) -o	test	node.o	form.o	test.o	$(LDPATH) $(LDFLAGS) $(CFLAGS)
 
