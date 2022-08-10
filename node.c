@@ -11,9 +11,11 @@
 
 void InitList(List *list)
 {
-    unsigned char data[16] = {0, };
-    list->head = createNode(data);
-    list->tail = createNode(data);
+    unsigned char empty_data[16] = {0, };
+    Node *dummy_head = createNode(empty_data);
+    Node *dummy_tail = createNode(empty_data);
+    list->head = dummy_head;
+    list->tail = dummy_tail;
     list->head->next = list->tail;
     list->tail->prev = list->head;
     list->count = 0;
@@ -46,9 +48,23 @@ void removeNode(Node *this)
     free(this);
 }
 
+void removeNodes(List *list, int start, int size){
+    for(int block_num = start; block_num < size; block_num++)
+    {
+        removeNode(seekNode(list, block_num));
+    }
+}
+
 Node *seekNode(List *list, int index)
 {
     Node *seek = list->head->next;
+    if (index == -1){
+        return list->head;
+    }
+    else if (index < -1 || index >= list->count){
+        return seek;
+    }
+
     for(int i = 0; i < index; i++)
     {
         seek = seek->next;
@@ -62,8 +78,5 @@ void insertNode(Node *this, Node *next)
     this->next = next;
     next->prev->next = this;
     next->prev = this;
-
-
-
     return;
 }

@@ -19,7 +19,7 @@ int main()
 
     List *cipherText = (List *)calloc(1, sizeof(List));
     InitList(cipherText);
-    unsigned char global_meta[128] = {0, };
+    unsigned char global_meta[BUFSIZE] = {0, };
 
     unsigned char front_ivec = rand() % 256;
     unsigned char back_ivec = front_ivec;
@@ -41,32 +41,49 @@ int main()
 
     unsigned char input[BUFSIZE];
     unsigned char inst[10] = {0, };
+    unsigned char result[BUFSIZE * 10];
     int index = 0;
+
+    // buffer fread from file(argv[1])
+    // 1. open file
+    // 2. fread to buffer if not EOF
+
     while(1)
     {
-        printf("Insert or Delete? ");
-        scanf("%s", &inst);
-        if(strncmp(inst, "finish", 6) == 0)
+        printf("\nInsert or Delete? ");
+        scanf("%s", inst);
+
+        if(strncmp(inst, "f", 1) == 0)
             break;
-        printf("input index: ");
+
+        printf("\ninput index: ");
         scanf("%d", &index);
-        if(strncmp(inst, "Insert", 6) == 0)
+
+        if(strncmp(inst, "i", 1) == 0)
         {
-            printf("input data: ");
-            scanf("%s", &input);
-            insertion(input, cipherText, index, strlen(input), enc_key, dec_key, global_meta);
+            printf("\ninput data: ");
+            scanf("%s", input);
+
+            insertion(cipherText, input, index, strlen(input), enc_key, dec_key, global_meta);
         }
-        else if(strncmp(inst, "Delete", 6) == 0)
+        else if(strncmp(inst, "d", 1) == 0)
         {
             int length = 0;
-            printf("input delete length");
+            printf("\ninput delete length");
             scanf("%d", &length);
+
             deletion(cipherText, index, length, enc_key, dec_key, global_meta);
         }
+
+        printf("list size: %d\n", cipherText->count);
+        print_global_metadata(global_meta, cipherText->count, dec_key);
+
+	    decrypt(result, cipherText, dec_key);
+	    printf("decrypted data : %s\n", result);
+        memset(result, 0, BUFSIZE * 10);
     }
 
-    unsigned char result[BUFSIZE * 10];
-    decrypt(cipherText, result, dec_key);
+    decrypt(result, cipherText, dec_key);
 
     printf("decrypted data : %s", result);
 
