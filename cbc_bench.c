@@ -65,6 +65,9 @@ int main(int argc, char **argv)
     List *cipherText = (List *)calloc(1, sizeof(List));
     InitList(cipherText);
 
+    clock_t start, end;
+    double cpu_time_used;
+
     int result_size = file_size;
 
     unsigned char *result = (unsigned char*)calloc(result_size, sizeof(unsigned char));

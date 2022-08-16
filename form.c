@@ -289,7 +289,7 @@ void deletion(List *list, int index, int size, const void *enc_key, const void *
         else{
             // bound block
             int bound = index + size + 1;
-            int bound_block_num = 0;
+            int bound_block_num = 0; 
             find_block_start(bound, &bound_block_num, global_metadata);
 
             char delete_from_block_start = first_block_start == delete_start ? 1 : 0;
@@ -651,6 +651,73 @@ void insertion(List *list, unsigned char *input, int index, int insert_size, con
     free(global_metadata);
     global_metadata = 0;
     //print_global_metadata(enc_global_metadata, list->count, dec_key);
+}
+
+void modification(List *list, unsigned char *input, int index, int size, const void *enc_key, const void *dec_key, 
+                unsigned char *enc_global_metadata)
+{
+    srand(time(NULL));
+    int modify_end = index + size;
+    link_t front_link = rand()%256;
+    link_t back_link = rand()%256;
+    bitmap_t bitmap = 0;
+
+    unsigned char *global_metadata = calloc(list->count, sizeof(unsigned char));
+    decrypt_global_metadata(global_metadata, enc_global_metadata, list->count, dec_key);
+
+    int total_size = 0;
+
+    for(int i = 0; i < list->count; i++){
+        total_size += global_metadata[i];
+    }
+
+    int modify_start = index;
+    int modified_blocks = 0;
+    // first block to be modify
+    int first_block_num = 0;
+    int first_block_start = find_block_start(modify_start, &first_block_num, global_metadata);
+
+    // last block to be modify
+    int last_block_num = 0;
+    int last_block_start = find_block_start(modify_end, &last_block_num, global_metadata);
+
+    if(first_block_num == last_block_num){
+        Node *modify_node = seekNode(list, first_block_num);
+        unsigned char tmp_data[16];
+        AES_decrypt(modify_node->data, tmp_data, dec_key);
+        memcpy(bitmap, tmp_data + sizeof(link_t), sizeof(bitmap_t));
+        int front_data_len = index - first_block_start;
+        bitmap_t check_bitmap = (bitmap_t) BITMAP_SEED;
+        int modify_start_check = 0;
+        int input_data_index = 0;
+
+        for (int data_index = 0; data_index < DATA_SIZE_IN_BLOCK; data_index++)
+        {
+            if(bitmap & check_bitmap)
+            {
+                if(modify_start_check < front_data_len)
+                    modify_start_check++;
+                else
+                {
+                    tmp_data[data_index + DATA_START] = input[input_data_index];
+                    input_data_index++;
+                }
+
+            }
+            check_bitmap = check_bitmap >> 1;
+        }
+        AES_encrypt(tmp_data, modify_node->data, enc_key);
+        
+
+    }
+    else
+    {
+        deletion(list, index, size, enc_key, dec_key, enc_global_metadata);
+        insertion(list, input, index, size, enc_key, dec_key, enc_global_metadata);
+    }
+
+    return;
+
 }
 
 void encrypt_block(Node *node, link_t front_link, link_t back_link, bitmap_t bitmap, unsigned char *data,
